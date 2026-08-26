@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Masuk — SIRAWM PERUMDA Air Minum Tirtarangga</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,450;0,9..144,600;0,9..144,700;1,9..144,500&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- ================= LOGIN SCENE ================= -->
+<div class="login-scene" id="loginScene">
+  <div class="water-shimmer"></div>
+
+  <div class="bubble" style="left:6%;  width:10px; height:10px; --wobble:14px;  animation-duration:7.5s; animation-delay:0s;"></div>
+  <div class="bubble" style="left:14%; width:6px;  height:6px;  --wobble:-10px; animation-duration:6.2s; animation-delay:1.1s;"></div>
+  <div class="bubble" style="left:22%; width:13px; height:13px; --wobble:18px;  animation-duration:9s;   animation-delay:2.4s;"></div>
+  <div class="bubble" style="left:31%; width:8px;  height:8px;  --wobble:-14px; animation-duration:7s;   animation-delay:.4s;"></div>
+  <div class="bubble" style="left:39%; width:5px;  height:5px;  --wobble:9px;   animation-duration:5.6s; animation-delay:3.2s;"></div>
+  <div class="bubble" style="left:47%; width:11px; height:11px; --wobble:-16px; animation-duration:8.2s; animation-delay:1.8s;"></div>
+  <div class="bubble" style="left:55%; width:7px;  height:7px;  --wobble:12px;  animation-duration:6.6s; animation-delay:.9s;"></div>
+  <div class="bubble" style="left:63%; width:14px; height:14px; --wobble:-20px; animation-duration:9.6s; animation-delay:2.9s;"></div>
+  <div class="bubble" style="left:70%; width:6px;  height:6px;  --wobble:10px;  animation-duration:5.9s; animation-delay:.2s;"></div>
+  <div class="bubble" style="left:77%; width:9px;  height:9px;  --wobble:-13px; animation-duration:7.4s; animation-delay:3.6s;"></div>
+  <div class="bubble" style="left:84%; width:12px; height:12px; --wobble:16px;  animation-duration:8.6s; animation-delay:1.3s;"></div>
+  <div class="bubble" style="left:90%; width:5px;  height:5px;  --wobble:-9px;  animation-duration:5.2s; animation-delay:2.1s;"></div>
+  <div class="bubble" style="left:96%; width:8px;  height:8px;  --wobble:11px;  animation-duration:6.9s; animation-delay:.6s;"></div>
+
+  <form class="login-card" id="loginForm" autocomplete="off">
+    <div class="crest-row">
+      <img src="logo-pdam.png" alt="Logo PDAM Tirtarangga">
+      <div class="crest-divider"></div>
+      <img src="logo-subang.png" alt="Lambang Kabupaten Subang">
+    </div>
+    <p class="login-eyebrow">Perumda Air Minum Tirtarangga &middot; Cabang Ranggawulung</p>
+    <h1 class="login-title">SIRAWM</h1>
+    <p class="login-sub">Sistem Rekap Ketidaksesuaian Water Meter</p>
+
+    <div id="loginError" class="login-error hidden">
+      <svg viewBox="0 0 24 24" fill="none" width="15" height="15"><path d="M12 9v4m0 4h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <span>Username atau kata sandi salah. Coba lagi.</span>
+    </div>
+
+    <div class="field">
+      <label for="loginUser">Username</label>
+      <div class="input-wrap">
+        <svg class="icon" viewBox="0 0 24 24" fill="none"><path d="M12 12a4.5 4.5 0 1 0 0-9 4.5 4.5 0 0 0 0 9Z" stroke="currentColor" stroke-width="1.8"/><path d="M4 20.5c1.6-3.6 4.8-5.5 8-5.5s6.4 1.9 8 5.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+        <input id="loginUser" type="text" placeholder="masukkan username" value="" required>
+      </div>
+    </div>
+    <div class="field">
+      <label for="loginPass">Kata sandi</label>
+      <div class="input-wrap">
+        <svg class="icon" viewBox="0 0 24 24" fill="none"><rect x="4.5" y="10.5" width="15" height="9.5" rx="2.2" stroke="currentColor" stroke-width="1.8"/><path d="M8 10.5V7.8a4 4 0 1 1 8 0v2.7" stroke="currentColor" stroke-width="1.8"/></svg>
+        <input id="loginPass" type="password" placeholder="Masukkan kata sandi" required>
+      </div>
+    </div>
+
+    <button type="submit" class="btn-primary">
+      <span>Masuk ke Sistem</span>
+      <svg viewBox="0 0 24 24" fill="none" width="16" height="16"><path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
+
+    <p class="login-note">klik <b>Masuk ke Sistem</b> untuk melihat dashboard.</p>
+  </form>
+</div>
+
+<div id="toastHost" style="position:fixed; inset:auto; z-index:200;"></div>
+
+<script src="shared.js"></script>
+<script>
+(function(){
+"use strict";
+
+/* ============================================================
+   Kalau sudah ada sesi login yang masih valid, langsung lempar
+   ke index.html -- tidak perlu isi form login lagi.
+   ============================================================ */
+(async function redirectIfLoggedIn(){
+  const token = localStorage.getItem('token');
+  if (!token) return;
+  try {
+    await apiFetch('/profile');
+    window.location.href = 'index.html';
+  } catch(e) {
+    localStorage.removeItem('token');
+  }
+})();
+
+/* ============================================================
+   LOGIN
+   ============================================================ */
+$('#loginForm').addEventListener('submit', async (e)=>{
+  e.preventDefault();
+  const user = $('#loginUser').value.trim();
+  const pass = $('#loginPass').value.trim();
+  if(!user || !pass){
+    $('#loginError').classList.remove('hidden');
+    return;
+  }
+  $('#loginError').classList.add('hidden');
+
+  try {
+    const res = await fetch(`${API_BASE}/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username: user, password: pass })
+    });
+    const json = await res.json();
+    if (!json.success) throw new Error(json.message);
+    localStorage.setItem('token', json.token);
+    window.location.href = 'index.html';
+  } catch (err) {
+    $('#loginError').classList.remove('hidden');
+    $('#loginError span').textContent = err.message || 'Username atau password salah';
+  }
+});
+})();
+</script>
+</body>
+</html>

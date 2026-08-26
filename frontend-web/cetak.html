@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cetak Laporan — SIRAWM</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,450;0,9..144,600;0,9..144,700;1,9..144,500&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<style>
+  body{ background:var(--mist-50); }
+  .cetak-topbar{
+    display:flex; align-items:center; gap:12px;
+    padding:16px 24px; background:var(--paper); border-bottom:1px solid var(--line);
+  }
+  .cetak-back{
+    display:inline-flex; align-items:center; gap:6px; color:var(--forest-900);
+    font-family:var(--font-body); font-weight:600; font-size:13.5px; text-decoration:none;
+    padding:8px 12px; border-radius:var(--radius-s); transition:background .15s;
+  }
+  .cetak-back:hover{ background:var(--mist-100); }
+  .cetak-wrap{ max-width:1100px; margin:0 auto; padding:24px; }
+  @media print{ .cetak-topbar{ display:none !important; } .cetak-wrap{ padding:0; max-width:none; } }
+</style>
+</head>
+<body>
+
+<div class="cetak-topbar no-print">
+  <a href="index.html" class="cetak-back">
+    <svg viewBox="0 0 24 24" fill="none" width="16" height="16"><path d="M19 12H5M11 6l-6 6 6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <span>Kembali ke Dashboard</span>
+  </a>
+</div>
+
+<div class="cetak-wrap">
+  <div id="pageContent" class="page"></div>
+</div>
+
+<div id="toastHost" style="position:fixed; inset:auto; z-index:200;"></div>
+
+<script src="shared.js"></script>
+<script>
+(function(){
+"use strict";
+
+async function renderLaporan(root){
+  root.innerHTML = `
+    <div class="page-head"><div><h1>Cetak Laporan</h1><p>Pilih data yang mau diunduh atau dicetak</p></div>
+      <div class="no-print" style="display:flex; gap:8px;">
+        <button class="btn btn-outline" id="btnExportExcel">${ICON.download}Excel</button>
+        <button class="btn btn-outline" id="btnExportPdf">${ICON.download}PDF</button>
+        <button class="btn btn-forest" id="btnPrint">${ICON.printer}Cetak</button>
+      </div>
+    </div>
+    <div class="panel no-print" style="margin-bottom:18px;">
+      <div class="filter-bar" style="border:none;">
+        <select id="lapSumber"></select>
+        <select id="lapPeriode"><option value="harian">Harian</option><option value="mingguan">Mingguan</option><option value="bulanan" selected>Bulanan</option><option value="tahunan">Tahunan</option></select>
+        <select id="lapStatus"><option value="">Semua Status</option></select>
+      </div>
+    </div>
+    <div class="report-sheet" id="reportSheet"></div>
+  `;
+
+  // Ambil daftar sumber data (Rekap, Pelanggan, Water Meter, Verifikasi) untuk isi dropdown
+  let sumberList = [];
+  try {
+    const metaJson = await apiFetch('/laporan/meta');
+    sumberList = metaJson.data || [];
+  } catch(e) { toast('Gagal memuat daftar sumber laporan'); return; }
+
+  const selSumber = document.getElementById('lapSumber');
+  selSumber.innerHTML = sumberList.map(s => `<option value="${s.key}">${esc(s.label)}</option>`).join('');
+
+  function isiOpsiStatus(){
+    const sumber = sumberList.find(s => s.key === selSumber.value);
+    const selStatus = document.getElementById('lapStatus');
+    const opsi = sumber?.statusOptions || [];
+    selStatus.innerHTML = `<option value="">Semua Status</option>` + opsi.map(o => `<option>${esc(o)}</option>`).join('');
+    document.getElementById('lapPeriode').style.display = sumber?.usesPeriode ? '' : 'none';
+  }
+
+  async function loadReport() {
+    const sumber = selSumber.value;
+    const status = document.getElementById('lapStatus').value;
+    const periode = document.getElementById('lapPeriode').value;
+    try {
+      const json = await apiFetch(`/laporan/data?sumber=${sumber}&status=${encodeURIComponent(status)}&periode=${periode}`);
+      const { columns, rows, meta, label } = json;
+      const sheet = document.getElementById('reportSheet');
+      sheet.innerHTML = `
+        <div class="report-letterhead">
+          <img src="logo-pdam.png" alt="Logo PDAM">
+          <div><h4>${esc(label)}</h4><p>PERUMDA Air Minum Tirtarangga Kabupaten Subang — Cabang Subang Ranggawulung</p></div>
+          <img src="logo-subang.png" alt="Lambang Kabupaten Subang" style="height:40px; margin-left:auto;">
+        </div>
+        <div class="report-meta">
+          <div>${esc(meta)}</div>
+          <div>Dicetak oleh: <b id="lapUser">Administrator</b></div>
+          <div>Tanggal cetak: <b>${new Date().toLocaleDateString('id-ID', {day:'2-digit',month:'long',year:'numeric'})}</b></div>
+        </div>
+        <div class="table-scroll"><table class="data-table"><thead><tr>${columns.map(c=>`<th>${esc(c.label)}</th>`).join('')}</tr></thead>
+        <tbody>${rows.length ? rows.map(r=>`<tr>${columns.map(c=>{
+          const val = r[c.key];
+          return `<td class="${c.key==='no'?'':'cell-mono'}">${val===null||val===undefined||val===''?'-':esc(String(val))}</td>`;
+        }).join('')}</tr>`).join('') : `<tr><td colspan="${columns.length}"><div class="empty-state">${ICON.empty}<p>Tidak ada data untuk filter ini.</p></div></td></tr>`}</tbody></table></div>
+        <p style="font-size:11px;color:var(--ink-500);margin-top:18px;">Laporan ini dibuat otomatis oleh sistem SIRAWM.</p>
+      `;
+      document.getElementById('lapUser').textContent = state.role==='Admin' ? 'Administrator' : 'Petugas Lapangan';
+    } catch(e) { toast('Gagal memuat laporan'); }
+  }
+
+  selSumber.addEventListener('change', ()=>{ isiOpsiStatus(); loadReport(); });
+  document.getElementById('lapPeriode').addEventListener('change', loadReport);
+  document.getElementById('lapStatus').addEventListener('change', loadReport);
+  document.getElementById('btnPrint').addEventListener('click', ()=>window.print());
+  document.getElementById('btnExportExcel').addEventListener('click', ()=>{
+    const sumber = selSumber.value;
+    const status = document.getElementById('lapStatus').value;
+    const periode = document.getElementById('lapPeriode').value;
+    downloadFile(`/laporan/excel?sumber=${sumber}&status=${encodeURIComponent(status)}&periode=${periode}`, `laporan-${sumber}-${periode}.xlsx`);
+  });
+  document.getElementById('btnExportPdf').addEventListener('click', ()=>{
+    const sumber = selSumber.value;
+    const status = document.getElementById('lapStatus').value;
+    const periode = document.getElementById('lapPeriode').value;
+    downloadFile(`/laporan/pdf?sumber=${sumber}&status=${encodeURIComponent(status)}&periode=${periode}`, `laporan-${sumber}-${periode}.pdf`);
+  });
+
+  isiOpsiStatus();
+  loadReport();
+}
+
+/* ============================================================
+   INIT — halaman ini butuh login yang valid
+   ============================================================ */
+(async function init(){
+  const ok = await requireAuth();
+  if (!ok) return; // requireAuth sudah redirect ke login.html kalau gagal
+  renderLaporan(document.getElementById('pageContent'));
+})();
+})();
+</script>
+</body>
+</html>

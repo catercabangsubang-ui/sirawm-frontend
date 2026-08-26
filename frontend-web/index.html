@@ -1,0 +1,1382 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SIRAWM — PERUMDA Air Minum Tirtarangga Subang</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,450;0,9..144,600;0,9..144,700;1,9..144,500&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+<!-- ============================================================
+     KONFIGURASI GOOGLE API — project GCP "SIRAWM"
+     API Key dipakai untuk Maps JavaScript API (fitur titik lokasi
+     pelanggan). Link foto Google Drive ditempel manual oleh
+     petugas, jadi tidak perlu OAuth login di sini.
+     ============================================================ -->
+<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBj_k7CLSutXU-XqGhkyBpfj-MLvQr_yhM&libraries=places&loading=async&callback=Function.prototype" async defer></script>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- ================= APP SHELL ================= -->
+<div class="app-shell hidden" id="appShell">
+  <aside class="sidebar" id="sidebar">
+    <div class="sb-brand">
+      <img src="logo-pdam-icon.png" alt="Logo PDAM Tirtarangga">
+      <img class="seal" src="logo-subang.png" alt="Lambang Kabupaten Subang">
+      <div class="sb-brand-name">SIRAWM<small>Rekap Water Meter</small></div>
+    </div>
+
+    <nav class="sb-nav" id="sbNav">
+      <div class="sb-section-label">Menu Utama</div>
+      <a href="#dashboard" class="sb-link active" data-route="dashboard">
+        <svg viewBox="0 0 24 24" fill="none"><rect x="3.5" y="3.5" width="7.5" height="7.5" rx="1.8" stroke="currentColor" stroke-width="1.7"/><rect x="13" y="3.5" width="7.5" height="4.5" rx="1.8" stroke="currentColor" stroke-width="1.7"/><rect x="13" y="10.5" width="7.5" height="10" rx="1.8" stroke="currentColor" stroke-width="1.7"/><rect x="3.5" y="13.5" width="7.5" height="7" rx="1.8" stroke="currentColor" stroke-width="1.7"/></svg>
+        <span>Dashboard</span>
+      </a>
+      <a href="#pelanggan" class="sb-link" data-route="pelanggan">
+        <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="3.4" stroke="currentColor" stroke-width="1.7"/><path d="M4.5 20c1.6-4 4.4-6 7.5-6s5.9 2 7.5 6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+        <span>Data Pelanggan</span>
+      </a>
+      <a href="#meter" class="sb-link" data-route="meter">
+        <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="8" stroke="currentColor" stroke-width="1.7"/><path d="M12 8v4l2.6 2.6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span>Data Water Meter</span>
+      </a>
+      <a href="#rekap" class="sb-link" data-route="rekap">
+        <svg viewBox="0 0 24 24" fill="none"><path d="M12 2.5 3 7v6c0 5 3.8 8 9 9 5.2-1 9-4 9-9V7l-9-4.5Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M9 12.2l2.1 2.1L15.3 10" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span>Rekap Ketidaksesuaian</span>
+        <span class="sb-badge warn" id="navRekapCount">0</span>
+      </a>
+      <a href="#pembacaan" class="sb-link" data-route="pembacaan">
+        <svg viewBox="0 0 24 24" fill="none"><path d="M4.5 4.5h15v15h-15z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M4.5 9.5h15M9.5 4.5v15" stroke="currentColor" stroke-width="1.7"/></svg>
+        <span>Verifikasi Baca Meter</span>
+      </a>
+      <a href="#pencarian" class="sb-link" data-route="pencarian">
+        <svg viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="6.5" stroke="currentColor" stroke-width="1.7"/><path d="m20 20-4-4" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+        <span>Pencarian</span>
+      </a>
+
+      <div class="sb-section-label">Laporan</div>
+      <a href="cetak.html" class="sb-link">
+        <svg viewBox="0 0 24 24" fill="none"><path d="M7 3.5h7l4 4V20a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V4.5a1 1 0 0 1 1-1Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M14 3.5V8h4M9 12.5h6M9 15.8h6M9 9.2h2.5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+        <span>Cetak Laporan</span>
+      </a>
+
+      <div class="sb-section-label admin-only">Administrasi</div>
+      <a href="#petugas" class="sb-link admin-only" data-route="petugas">
+        <svg viewBox="0 0 24 24" fill="none"><circle cx="9" cy="8" r="3.2" stroke="currentColor" stroke-width="1.7"/><path d="M2.8 19c1.3-3.4 3.6-5 6.2-5s4.9 1.6 6.2 5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><path d="M15.5 5.3a3.2 3.2 0 0 1 0 6.2M18 19c-.7-2-1.8-3.4-3.2-4.2" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+        <span>Manajemen Petugas</span>
+      </a>
+    </nav>
+
+    <div class="sb-foot">
+      <div class="sb-user" id="sbUserBtn" style="cursor:pointer;" title="Lihat profil">
+        <div class="sb-avatar" id="sbAvatar">A</div>
+        <div>
+          <div class="sb-user-name" id="sbUserName">Admin</div>
+          <div class="sb-user-role" id="sbUserRole">Administrator Sistem</div>
+        </div>
+      </div>
+      <button class="sb-logout" id="btnLogout">
+        <svg viewBox="0 0 24 24" fill="none"><path d="M9 21H5.5A1.5 1.5 0 0 1 4 19.5v-15A1.5 1.5 0 0 1 5.5 3H9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M16 17l5-5-5-5M21 12H9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span>Keluar</span>
+      </button>
+    </div>
+  </aside>
+
+  <div class="main-col">
+    <header class="topbar">
+      <button class="topbar-icon-btn no-print" id="btnMenuToggle" style="display:none;">
+        <svg viewBox="0 0 24 24" fill="none"><path d="M3.5 6.5h17M3.5 12h17M3.5 17.5h17" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg>
+      </button>
+      <div>
+        <div class="topbar-title" id="topbarTitle">Dashboard</div>
+        <div class="topbar-sub" id="topbarSub">Ringkasan data hari ini</div>
+      </div>
+      <div class="topbar-search no-print">
+        <svg viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="6.5" stroke="currentColor" stroke-width="1.7"/><path d="m20 20-4-4" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+        <input id="globalSearch" type="text" placeholder="Cari no. pelanggan / no. WM...">
+      </div>
+      <div class="topbar-notif-wrap" style="position:relative;">
+        <button class="topbar-icon-btn no-print" id="btnNotif"><svg viewBox="0 0 24 24" fill="none"><path d="M12 3.5a5.5 5.5 0 0 0-5.5 5.5v3l-1.6 3.2a1 1 0 0 0 .9 1.4h12.4a1 1 0 0 0 .9-1.4L17.5 12V9A5.5 5.5 0 0 0 12 3.5Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M9.7 20a2.3 2.3 0 0 0 4.6 0" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg><span class="dot-ping" id="notifDot" style="display:none;"></span></button>
+      </div>
+    </header>
+
+    <main class="page" id="pageContent"></main>
+  </div>
+</div>
+
+<div id="toastHost" style="position:fixed; inset:auto; z-index:200;"></div>
+
+<div id="toastHost" style="position:fixed; inset:auto; z-index:200;"></div>
+
+<script src="shared.js"></script>
+<script>
+(function(){
+"use strict";
+
+/* ============================================================
+   LINK FOTO GOOGLE DRIVE — modal input link manual
+   Petugas upload foto ke Drive-nya sendiri (akun bebas), lalu
+   tempel link "Bagikan" ke sini. Tidak perlu login/OAuth khusus.
+   ============================================================ */
+function openFotoLinkModal(currentUrl, onSave){
+  const m = mountModal(`
+    <div class="modal-head"><h3>${currentUrl ? 'Ubah' : 'Tambahkan'} Link Foto</h3><button class="modal-close" data-close>${ICON.x}</button></div>
+    <div class="modal-body">
+      <div class="field full">
+        <label>Link Google Drive</label>
+        <input id="fFotoLink" value="${esc(currentUrl)}" placeholder="https://drive.google.com/file/d/.../view">
+      </div>
+      <p class="cell-sub" style="margin-top:10px;">
+        Upload foto meter ke Google Drive kamu, klik kanan file &rarr; <b>Bagikan</b> &rarr; ubah akses jadi
+        "Siapa saja yang memiliki link", lalu salin link-nya dan tempel di sini.
+      </p>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-outline" data-close>Batal</button>
+      <button class="btn btn-forest" id="fFotoLinkSave">${ICON.check}Simpan</button>
+    </div>
+  `);
+  m.querySelector('#fFotoLinkSave').addEventListener('click', () => {
+    const url = m.querySelector('#fFotoLink').value.trim();
+    closeModal();
+    onSave(url || null);
+  });
+}
+
+/* ============================================================
+   PETA LOKASI PELANGGAN — modal Google Maps dengan marker
+   yang bisa digeser petugas saat berada di lokasi rumah
+   ============================================================ */
+function openLokasiModal(pelanggan){
+  const hasLokasi = pelanggan.latitude != null && pelanggan.longitude != null;
+  const m = mountModal(`
+    <div class="modal-head"><h3>Sesuaikan Titik Lokasi</h3><button class="modal-close" data-close>${ICON.x}</button></div>
+    <div class="modal-body">
+      <p class="cell-sub" style="margin-bottom:10px;">${esc(pelanggan.nama)} — ${esc(pelanggan.alamat)}</p>
+      <div id="lokasiMapBox" style="width:100%; height:320px; border-radius:12px; overflow:hidden; background:var(--mist-100,#eee);"></div>
+      <p class="cell-sub" style="margin-top:10px;">Geser marker ke posisi rumah pelanggan yang tepat, lalu klik Simpan.</p>
+      <div style="margin-top:8px; font-family:var(--font-mono,monospace); font-size:12px; color:var(--ink-500);" id="lokasiCoordText">
+        ${hasLokasi ? `Lat: ${pelanggan.latitude}, Lng: ${pelanggan.longitude}` : 'Belum ada titik lokasi tersimpan'}
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-outline" id="lokasiPakaiGps">${ICON.pin}Pakai Lokasi Saya Saat Ini</button>
+      <button class="btn btn-outline" data-close>Batal</button>
+      <button class="btn btn-forest" id="lokasiSave">${ICON.check}Simpan Lokasi</button>
+    </div>
+  `);
+
+  if (!window.google || !google.maps) {
+    m.querySelector('#lokasiMapBox').innerHTML = '<div style="padding:20px;">Google Maps belum siap dimuat, coba tutup dan buka lagi modal ini.</div>';
+    return;
+  }
+
+  // pusat default: koordinat tersimpan, atau area PDAM Tirtarangga Subang kalau belum ada
+  const start = hasLokasi
+    ? { lat: parseFloat(pelanggan.latitude), lng: parseFloat(pelanggan.longitude) }
+    : { lat: -6.5636, lng: 107.7539 };
+
+  const map = new google.maps.Map(m.querySelector('#lokasiMapBox'), {
+    center: start, zoom: hasLokasi ? 18 : 15, mapTypeId: 'roadmap', streetViewControl: false,
+  });
+  const marker = new google.maps.Marker({ position: start, map, draggable: true });
+
+  function updateCoordText(){
+    const pos = marker.getPosition();
+    m.querySelector('#lokasiCoordText').textContent = `Lat: ${pos.lat().toFixed(7)}, Lng: ${pos.lng().toFixed(7)}`;
+  }
+  marker.addListener('dragend', updateCoordText);
+  map.addListener('click', (e) => { marker.setPosition(e.latLng); updateCoordText(); });
+
+  m.querySelector('#lokasiPakaiGps').addEventListener('click', () => {
+    if (!navigator.geolocation) { toast('Perangkat tidak mendukung GPS'); return; }
+    navigator.geolocation.getCurrentPosition((pos) => {
+      const here = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+      map.setCenter(here); map.setZoom(19); marker.setPosition(here); updateCoordText();
+    }, () => toast('Gagal mengambil lokasi GPS, izinkan akses lokasi di browser.'));
+  });
+
+  m.querySelector('#lokasiSave').addEventListener('click', async () => {
+    const pos = marker.getPosition();
+    try {
+      await apiFetch(`/pelanggan/${pelanggan.id}/lokasi`, {
+        method: 'PUT',
+        body: JSON.stringify({ latitude: pos.lat(), longitude: pos.lng() })
+      });
+      toast('Titik lokasi pelanggan disimpan');
+      closeModal();
+    } catch(err) { toast(err.message || 'Gagal menyimpan lokasi'); }
+  });
+}
+
+/* ============================================================
+   LOGOUT
+   ============================================================ */
+$('#btnLogout').addEventListener('click', doLogout);
+
+/* ============================================================
+   ROUTER
+   ============================================================ */
+const ROUTES = {
+  dashboard:{ title:'Dashboard', sub:'Ringkasan data hari ini', render: renderDashboard },
+  pelanggan:{ title:'Data Pelanggan', sub:'Kelola data pelanggan PDAM Tirtarangga', render: renderPelanggan },
+  meter:{ title:'Data Water Meter', sub:'Inventaris unit water meter terpasang', render: renderMeter },
+  rekap:{ title:'Rekap Ketidaksesuaian WM', sub:'Pencatatan WM yang tidak sesuai nomor pelanggan', render: renderRekap },
+  notifikasi:{ title:'Notifikasi', sub:'Status terbaru kasus ketidaksesuaian WM', render: renderNotifikasi },
+  pembacaan:{ title:'Verifikasi Baca Meter', sub:'Verifikasi hasil pembacaan meter oleh petugas lapangan', render: renderPembacaan },
+  pencarian:{ title:'Pencarian Data', sub:'Cari lintas data pelanggan, WM, dan rekap', render: renderPencarian },
+  profile:{ title:'Profil Saya', sub:'Kelola informasi akun kamu', render: renderProfile },
+  petugas:{ title:'Manajemen Petugas', sub:'Kelola akun Petugas Lapangan', render: renderManajemenPetugas },
+};
+
+function navigate(route){
+  if(!ROUTES[route]) route='dashboard';
+  state.route = route;
+  $$('.sb-link').forEach(a=> a.classList.toggle('active', a.dataset.route===route));
+  $('#topbarTitle').textContent = ROUTES[route].title;
+  $('#topbarSub').textContent = ROUTES[route].sub;
+  $('#pageContent').innerHTML = '';
+  ROUTES[route].render($('#pageContent'));
+  $('#pageContent').classList.remove('page'); void $('#pageContent').offsetWidth; $('#pageContent').classList.add('page');
+  if(window.innerWidth<=860) $('#sidebar').classList.remove('open');
+}
+
+$$('.sb-link[data-route]').forEach(a=>{
+  a.addEventListener('click', e=>{
+    e.preventDefault();
+    navigate(a.dataset.route);
+  });
+});
+$('#sbUserBtn').addEventListener('click', ()=> navigate('profile'));
+$('#btnMenuToggle').addEventListener('click', ()=> $('#sidebar').classList.toggle('open'));
+
+/* ============================================================
+   NOTIFIKASI
+   ============================================================ */
+async function loadNotifications(){
+  const dotEl = document.getElementById('notifDot');
+  try {
+    const json = await apiFetch('/dashboard/summary');
+    const data = json.data || {};
+    const belum = data.belumSelesai || 0;
+    dotEl.style.display = belum > 0 ? 'block' : 'none';
+  } catch(e) {
+    // biarkan dot apa adanya kalau gagal memuat ringkasan
+  }
+}
+
+document.getElementById('btnNotif').addEventListener('click', ()=>{
+  navigate('notifikasi');
+});
+// Cek notifikasi awal saat aplikasi dibuka (supaya titik merah langsung muncul kalau ada kasus tertunda)
+if (state.token) loadNotifications();
+
+// Ikon status untuk halaman Notifikasi: hijau=Selesai, kuning=Proses, merah=Belum
+function notifStatusBadge(status){
+  const map = {
+    'Selesai': { bg:'var(--ok-bg)',   fg:'var(--ok)',   icon:ICON.check },
+    'Proses':  { bg:'var(--warn-bg)', fg:'var(--warn)', icon:ICON.check },
+    'Belum':   { bg:'var(--danger-bg)', fg:'var(--danger)', icon:ICON.x },
+  };
+  const s = map[status] || map['Belum'];
+  return `<div style="width:38px; height:38px; border-radius:50%; flex:0 0 auto; display:flex; align-items:center; justify-content:center; background:${s.bg}; color:${s.fg};">
+    <span style="width:16px; height:16px; display:inline-flex;">${s.icon}</span>
+  </div>`;
+}
+
+async function renderNotifikasi(root){
+  root.innerHTML = `
+    <div class="page-head"><div><h1>Notifikasi</h1><p>Status terbaru kasus ketidaksesuaian WM</p></div></div>
+    <div class="panel" style="padding:0; overflow:hidden;">
+      <div id="notifPageList"><div style="padding:20px 16px; color:var(--ink-500,#888); font-size:13px;">Memuat notifikasi...</div></div>
+    </div>
+  `;
+  const listEl = document.getElementById('notifPageList');
+  try {
+    const json = await apiFetch('/rekap');
+    const data = (json.data || []).slice().sort((a,b)=> new Date(b.tanggal) - new Date(a.tanggal));
+    listEl.innerHTML = data.length ? data.map(r=>`
+      <div style="display:flex; align-items:center; gap:12px; padding:14px 16px; border-bottom:1px solid var(--mist-100,#eee);">
+        ${notifStatusBadge(r.status)}
+        <div style="flex:1; min-width:0;">
+          <div style="font-weight:600; font-size:14px; color:var(--forest-950,#111);">${esc(r.nama_pelanggan||'-')}</div>
+          <div style="font-size:12.5px; color:var(--ink-500,#888);">No. WM: ${esc(r.wm_terpasang_seri||'-')}</div>
+        </div>
+        <div style="font-size:12px; color:var(--ink-500,#999); white-space:nowrap;">${esc(r.tanggal||'')}</div>
+      </div>
+    `).join('') : `<div style="padding:20px 16px; color:var(--ink-500,#888); font-size:13px;">Belum ada notifikasi.</div>`;
+  } catch(e) {
+    listEl.innerHTML = `<div style="padding:20px 16px; color:var(--ink-500,#888); font-size:13px;">Gagal memuat notifikasi.</div>`;
+  }
+}
+
+/* ============================================================
+   DASHBOARD
+   ============================================================ */
+async function renderDashboard(root){
+  root.innerHTML = `
+    <div class="kpi-grid">
+      <div class="kpi-card"><div class="kpi-top"><div class="kpi-icon" style="background:linear-gradient(135deg,var(--forest-700),var(--forest-900));">${ICON.users}</div><span class="kpi-trend up">-</span></div><div class="kpi-num" id="kpiPel">0</div><div class="kpi-label">Total Pelanggan</div></div>
+      <div class="kpi-card"><div class="kpi-top"><div class="kpi-icon" style="background:linear-gradient(135deg,var(--water-600),var(--water-700));">${ICON.gauge}</div><span class="kpi-trend up">-</span></div><div class="kpi-num" id="kpiWM">0</div><div class="kpi-label">Total Water Meter</div></div>
+      <div class="kpi-card"><div class="kpi-top"><div class="kpi-icon" style="background:linear-gradient(135deg,var(--gold-500),#b9791f);">${ICON.warn}</div><span class="kpi-trend warn">-</span></div><div class="kpi-num" id="kpiRekap">0</div><div class="kpi-label">WM Tidak Sesuai</div></div>
+      <div class="kpi-card"><div class="kpi-top"><div class="kpi-icon" style="background:linear-gradient(135deg,#38c6d9,var(--forest-800));">${ICON.calendar}</div><span class="kpi-trend up">-</span></div><div class="kpi-num" id="kpiHari">0</div><div class="kpi-label">Kasus Baru Hari Ini</div></div>
+    </div>
+    ${riverDivider()}
+    <div class="two-col">
+      <div class="panel"><div class="panel-head"><div><h3>Tren Ketidaksesuaian WM</h3><div class="sub">6 bulan terakhir</div></div><span class="pill water">${ICON.gauge}Bulanan</span></div>
+        <div class="panel-body chart-wrap"><div class="chart-bars" id="chartBars"></div></div>
+      </div>
+      <div class="panel"><div class="panel-head"><div><h3>Aktivitas Terbaru</h3><div class="sub">Log kegiatan petugas</div></div></div>
+        <div class="panel-body"><ul class="feed" id="feedList"></ul></div>
+      </div>
+    </div>
+    <div class="panel"><div class="panel-head"><div><h3>Kasus Perlu Tindak Lanjut</h3><div class="sub">Status "Belum" &amp; "Proses"</div></div><button class="btn btn-outline btn-sm" data-goto="rekap">Lihat semua</button></div>
+      <div class="table-scroll"><table class="data-table"><thead><tr><th>Tanggal</th><th>Pelanggan</th><th>WM Terpasang</th><th>WM Seharusnya</th><th>Jenis</th><th>Status</th></tr></thead><tbody id="pendingRekapBody"></tbody></table></div>
+    </div>
+  `;
+  root.querySelector('[data-goto="rekap"]').addEventListener('click', ()=>navigate('rekap'));
+
+  try {
+    const json = await apiFetch('/dashboard/summary');
+    const data = json.data;
+    document.getElementById('kpiPel').textContent = data.totalPelanggan || 0;
+    document.getElementById('kpiWM').textContent = data.totalMeter || 0;
+    document.getElementById('kpiRekap').textContent = data.totalRekap || 0;
+    document.getElementById('kpiHari').textContent = data.hariIni || 0;
+    document.getElementById('navRekapCount').textContent = data.belumSelesai || 0;
+
+    const chartContainer = document.getElementById('chartBars');
+    const trend = data.trend || [];
+    const maxVal = Math.max(...trend.map(d=>d.val), 1);
+    chartContainer.innerHTML = trend.map((m,i)=>`
+      <div class="chart-col">
+        <div class="chart-bar" style="height:${(m.val/maxVal*100).toFixed(0)}%; animation-delay:${i*90}ms;" title="${m.val} kasus"></div>
+        <span>${m.label}</span>
+      </div>
+    `).join('');
+
+    const rekapData = (await apiFetch('/rekap?limit=5')).data || [];
+    const feed = document.getElementById('feedList');
+    feed.innerHTML = rekapData.slice(0,4).map(r=>`
+      <li><div class="feed-dot ${r.status==='Selesai'?'ok':r.status==='Proses'?'warn':''}"></div>
+        <div class="feed-text"><b>${esc(r.nama_pelanggan||'')}</b> — ${esc(r.jenis_kesalahan||'')}<div class="feed-time">${r.tanggal}</div></div></li>
+    `).join('');
+
+    const pending = rekapData.filter(r=>r.status!=='Selesai').slice(0,5);
+    const pendingBody = document.getElementById('pendingRekapBody');
+    pendingBody.innerHTML = pending.map(r=>`
+      <tr>
+        <td class="cell-mono">${r.tanggal}</td>
+        <td><span class="cell-strong">${esc(r.nama_pelanggan||'')}</span><div class="cell-sub">${esc(r.no_pelanggan||'')}</div></td>
+        <td class="cell-mono">${r.wm_terpasang_seri||'-'}</td>
+        <td class="cell-mono">${r.wm_seharusnya_seri||'-'}</td>
+        <td>${esc(r.jenis_kesalahan||'')}</td>
+        <td>${pill(r.status)}</td>
+      </tr>
+    `).join('');
+  } catch (e) { console.error(e); toast('Gagal memuat dashboard'); }
+}
+
+
+/* ============================================================
+   DATA PELANGGAN
+   ============================================================ */
+async function renderPelanggan(root){
+  root.innerHTML = `
+    <div class="page-head"><div><h1>Data Pelanggan</h1><p id="pelCountInfo">Memuat...</p></div>
+      <button class="btn btn-forest admin-only" id="btnAddPel">${ICON.plus}Tambah Pelanggan</button>
+    </div>
+    <div class="panel">
+      <div class="filter-bar">
+        <div class="search">${ICON.drop}<input id="pelSearch" placeholder="Cari nama, nomor pelanggan, atau alamat..."></div>
+        <select id="pelRayon"><option value="">Semua Rayon</option><option>Rayon 1</option><option>Rayon 2</option><option>Rayon 3</option></select>
+        <select id="pelStatus"><option value="">Semua Status</option><option>Aktif</option><option>Nonaktif</option></select>
+      </div>
+      <div class="table-scroll"><table class="data-table"><thead><tr><th>No. Pelanggan</th><th>Nama</th><th>Alamat</th><th>Rayon</th><th>Status</th><th>Lokasi</th><th class="admin-only">Aksi</th></tr></thead><tbody id="pelBody"></tbody></table></div>
+      <div class="table-foot"><span id="pelCount"></span><div class="pager" id="pelPager"></div></div>
+    </div>
+  `;
+  applyRolePermissions();
+  $('#btnAddPel').addEventListener('click', ()=> openPelModal(null));
+
+  async function loadPelanggan() {
+    const params = new URLSearchParams({
+      search: document.getElementById('pelSearch').value,
+      rayon: document.getElementById('pelRayon').value,
+      status: document.getElementById('pelStatus').value
+    });
+    try {
+      const json = await apiFetch(`/pelanggan?${params}`);
+      const data = json.data || [];
+      document.getElementById('pelCountInfo').textContent = `${data.length} pelanggan terdaftar`;
+      document.getElementById('pelCount').textContent = `Menampilkan ${data.length} pelanggan`;
+      const tbody = document.getElementById('pelBody');
+      tbody.innerHTML = data.length ? data.map(p=>`
+        <tr>
+          <td class="cell-mono cell-strong">${esc(p.no_pelanggan)}</td>
+          <td>${esc(p.nama)}</td>
+          <td>${esc(p.alamat)}</td>
+          <td>${esc(p.rayon)}</td>
+          <td>${pill(p.status)}</td>
+          <td><button class="icon-btn ${p.latitude!=null?'':'icon-btn-muted'}" data-lokasi="${p.id}" title="${p.latitude!=null?'Titik lokasi sudah diatur — klik untuk ubah':'Belum ada titik lokasi — klik untuk atur'}">${ICON.pin}</button></td>
+          <td class="admin-only"><div class="row-actions">
+            <button class="icon-btn" data-edit="${p.id}">${ICON.edit}</button>
+            <button class="icon-btn danger" data-del="${p.id}">${ICON.trash}</button>
+          </div></td>
+        </tr>
+      `).join('') : `<tr><td colspan="7"><div class="empty-state">${ICON.empty}<p>Tidak ada pelanggan yang cocok.</p></div></td></tr>`;
+      attachPelangganEvents(loadPelanggan);
+      applyRolePermissions();
+    } catch (e) { toast('Gagal memuat data pelanggan'); }
+  }
+
+  document.getElementById('pelSearch').addEventListener('input', loadPelanggan);
+  document.getElementById('pelRayon').addEventListener('change', loadPelanggan);
+  document.getElementById('pelStatus').addEventListener('change', loadPelanggan);
+  loadPelanggan();
+}
+
+function attachPelangganEvents(refreshFn) {
+  document.querySelectorAll('#pelBody [data-del]').forEach(b=>{
+    b.addEventListener('click', async ()=>{
+      if(!confirm('Hapus data pelanggan ini?')) return;
+      try {
+        await apiFetch(`/pelanggan/${b.dataset.del}`, { method: 'DELETE' });
+        toast('Pelanggan dihapus');
+        refreshFn();
+      } catch(e) { toast('Gagal hapus: '+e.message); }
+    });
+  });
+  document.querySelectorAll('#pelBody [data-edit]').forEach(b=>{
+    b.addEventListener('click', async ()=>{
+      try {
+        const json = await apiFetch(`/pelanggan/${b.dataset.edit}`);
+        openPelModal(json.data);
+      } catch(e) { toast('Gagal ambil data pelanggan'); }
+    });
+  });
+  document.querySelectorAll('#pelBody [data-lokasi]').forEach(b=>{
+    b.addEventListener('click', async ()=>{
+      try {
+        const json = await apiFetch(`/pelanggan/${b.dataset.lokasi}`);
+        openLokasiModal(json.data);
+      } catch(e) { toast('Gagal ambil data pelanggan'); }
+    });
+  });
+}
+
+function openPelModal(existing) {
+  const isEdit = !!existing;
+  const m = mountModal(`
+    <div class="modal-head"><h3>${isEdit?'Ubah':'Tambah'} Data Pelanggan</h3><button class="modal-close" data-close>${ICON.x}</button></div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="field"><label>No. Pelanggan</label><input id="fPelNo" value="${isEdit?esc(existing.no_pelanggan):''}" placeholder="01-0000-00"></div>
+        <div class="field"><label>Nama</label><input id="fPelNama" value="${isEdit?esc(existing.nama):''}" placeholder="Nama lengkap"></div>
+        <div class="field full"><label>Alamat</label><input id="fPelAlamat" value="${isEdit?esc(existing.alamat):''}" placeholder="Alamat lengkap"></div>
+        <div class="field"><label>Rayon</label><select id="fPelRayon"><option ${existing?.rayon==='Rayon 1'?'selected':''}>Rayon 1</option><option ${existing?.rayon==='Rayon 2'?'selected':''}>Rayon 2</option><option ${existing?.rayon==='Rayon 3'?'selected':''}>Rayon 3</option></select></div>
+        <div class="field"><label>Status</label><select id="fPelStatus"><option ${existing?.status==='Aktif'?'selected':''}>Aktif</option><option ${existing?.status==='Nonaktif'?'selected':''}>Nonaktif</option></select></div>
+      </div>
+    </div>
+    <div class="modal-foot"><button class="btn btn-outline" data-close>Batal</button><button class="btn btn-forest" id="fPelSave">${ICON.check}Simpan</button></div>
+  `);
+  m.querySelector('#fPelSave').addEventListener('click', async ()=>{
+    const data = {
+      no_pelanggan: m.querySelector('#fPelNo').value.trim() || '—',
+      nama: m.querySelector('#fPelNama').value.trim() || 'Tanpa nama',
+      alamat: m.querySelector('#fPelAlamat').value.trim(),
+      rayon: m.querySelector('#fPelRayon').value,
+      status: m.querySelector('#fPelStatus').value
+    };
+    try {
+      if(isEdit) {
+        await apiFetch(`/pelanggan/${existing.id}`, { method: 'PUT', body: JSON.stringify(data) });
+        toast('Pelanggan diperbarui');
+      } else {
+        await apiFetch('/pelanggan', { method: 'POST', body: JSON.stringify(data) });
+        toast('Pelanggan ditambahkan');
+      }
+      closeModal();
+      navigate('pelanggan');
+    } catch(e) { toast('Gagal simpan: '+e.message); }
+  });
+}
+
+
+/* ============================================================
+   DATA WATER METER
+   ============================================================ */
+async function renderMeter(root){
+  root.innerHTML = `
+    <div class="page-head"><div><h1>Data Water Meter</h1><p id="wmCountInfo">Memuat...</p></div>
+      <button class="btn btn-forest admin-only" id="btnAddWM">${ICON.plus}Tambah Water Meter</button>
+    </div>
+    <div class="panel">
+      <div class="filter-bar">
+        <div class="search">${ICON.drop}<input id="wmSearch" placeholder="Cari nomor seri atau merk..."></div>
+        <select id="wmKondisi"><option value="">Semua Kondisi</option><option>Baik</option><option>Perlu diganti</option><option>Rusak</option></select>
+      </div>
+      <div class="table-scroll"><table class="data-table"><thead><tr><th>No. Seri WM</th><th>Merk</th><th>Ukuran</th><th>Th. Pasang</th><th>Kondisi</th><th>Terpasang pada</th><th class="admin-only">Aksi</th></tr></thead><tbody id="wmBody"></tbody></table></div>
+      <div class="table-foot"><span id="wmCount"></span></div>
+    </div>
+  `;
+  applyRolePermissions();
+  $('#btnAddWM').addEventListener('click', ()=> openWmModal(null));
+
+  async function loadMeter() {
+    const params = new URLSearchParams({
+      search: document.getElementById('wmSearch').value,
+      kondisi: document.getElementById('wmKondisi').value
+    });
+    try {
+      const json = await apiFetch(`/meter?${params}`);
+      const data = json.data || [];
+      document.getElementById('wmCountInfo').textContent = `${data.length} unit water meter`;
+      document.getElementById('wmCount').textContent = `Menampilkan ${data.length} unit`;
+      const tbody = document.getElementById('wmBody');
+      tbody.innerHTML = data.length ? data.map(w=>`
+        <tr>
+          <td class="cell-mono cell-strong">${esc(w.no_seri)}</td>
+          <td>${esc(w.merk)}</td>
+          <td>${esc(w.ukuran)}</td>
+          <td class="cell-mono">${w.tahun_pasang || '-'}</td>
+          <td>${pill(w.kondisi)}</td>
+          <td>${w.nama_pelanggan ? esc(w.nama_pelanggan) : '-'}</td>
+          <td class="admin-only"><div class="row-actions">
+            <button class="icon-btn" data-edit="${w.id}">${ICON.edit}</button>
+            <button class="icon-btn danger" data-del="${w.id}">${ICON.trash}</button>
+          </div></td>
+        </tr>
+      `).join('') : `<tr><td colspan="7"><div class="empty-state">${ICON.empty}<p>Tidak ada water meter yang cocok.</p></div></td></tr>`;
+      attachMeterEvents(loadMeter);
+      applyRolePermissions();
+    } catch(e) { toast('Gagal memuat data meter'); }
+  }
+
+  document.getElementById('wmSearch').addEventListener('input', loadMeter);
+  document.getElementById('wmKondisi').addEventListener('change', loadMeter);
+  loadMeter();
+}
+
+function attachMeterEvents(refreshFn) {
+  document.querySelectorAll('#wmBody [data-del]').forEach(b=>{
+    b.addEventListener('click', async ()=>{
+      if(!confirm('Hapus data water meter ini?')) return;
+      try {
+        await apiFetch(`/meter/${b.dataset.del}`, { method: 'DELETE' });
+        toast('Water meter dihapus');
+        refreshFn();
+      } catch(e) { toast('Gagal hapus: '+e.message); }
+    });
+  });
+  document.querySelectorAll('#wmBody [data-edit]').forEach(b=>{
+    b.addEventListener('click', async ()=>{
+      try {
+        const json = await apiFetch(`/meter/${b.dataset.edit}`);
+        openWmModal(json.data);
+      } catch(e) { toast('Gagal ambil data meter'); }
+    });
+  });
+}
+
+function openWmModal(existing) {
+  const isEdit = !!existing;
+  const m = mountModal(`
+    <div class="modal-head"><h3>${isEdit?'Ubah':'Tambah'} Data Water Meter</h3><button class="modal-close" data-close>${ICON.x}</button></div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="field"><label>No. Seri WM</label><input id="fWmNo" value="${isEdit?esc(existing.no_seri):''}" placeholder="MTR-00000"></div>
+        <div class="field"><label>Merk</label><input id="fWmMerk" value="${isEdit?esc(existing.merk):''}" placeholder="mis. Amico"></div>
+        <div class="field"><label>Ukuran</label><input id="fWmUkuran" value="${isEdit?esc(existing.ukuran):'1/2 inci'}"></div>
+        <div class="field"><label>Tahun Pemasangan</label><input id="fWmTahun" type="number" value="${isEdit?existing.tahun_pasang:2026}"></div>
+        <div class="field full"><label>Kondisi</label><select id="fWmKondisi"><option ${existing?.kondisi==='Baik'?'selected':''}>Baik</option><option ${existing?.kondisi==='Perlu diganti'?'selected':''}>Perlu diganti</option><option ${existing?.kondisi==='Rusak'?'selected':''}>Rusak</option></select></div>
+        <div class="field full"><label>Terpasang pada Pelanggan</label><select id="fWmPelanggan"></select></div>
+      </div>
+    </div>
+    <div class="modal-foot"><button class="btn btn-outline" data-close>Batal</button><button class="btn btn-forest" id="fWmSave">${ICON.check}Simpan</button></div>
+  `);
+
+  (async ()=>{
+    try {
+      const json = await apiFetch('/pelanggan');
+      const data = json.data || [];
+      const sel = m.querySelector('#fWmPelanggan');
+      sel.innerHTML = '<option value="">Tidak terpasang</option>' + 
+        data.map(p=>`<option value="${p.id}" ${existing?.id_pelanggan==p.id?'selected':''}>${esc(p.no_pelanggan)} — ${esc(p.nama)}</option>`).join('');
+    } catch(e) {}
+  })();
+
+  m.querySelector('#fWmSave').addEventListener('click', async ()=>{
+    const data = {
+      no_seri: m.querySelector('#fWmNo').value.trim() || 'MTR-00000',
+      merk: m.querySelector('#fWmMerk').value.trim(),
+      ukuran: m.querySelector('#fWmUkuran').value.trim(),
+      tahun_pasang: parseInt(m.querySelector('#fWmTahun').value)||2026,
+      kondisi: m.querySelector('#fWmKondisi').value,
+      id_pelanggan: m.querySelector('#fWmPelanggan').value || null
+    };
+    try {
+      if(isEdit) {
+        await apiFetch(`/meter/${existing.id}`, { method: 'PUT', body: JSON.stringify(data) });
+        toast('Water meter diperbarui');
+      } else {
+        await apiFetch('/meter', { method: 'POST', body: JSON.stringify(data) });
+        toast('Water meter ditambahkan');
+      }
+      closeModal();
+      navigate('meter');
+    } catch(e) { toast('Gagal simpan: '+e.message); }
+  });
+}
+
+
+/* ============================================================
+   REKAP KETIDAKSESUAIAN
+   ============================================================ */
+async function renderRekap(root){
+  root.innerHTML = `
+    <div class="page-head"><div><h1>Rekap Ketidaksesuaian WM</h1><p id="rkCountInfo">Memuat...</p></div>
+      <button class="btn btn-forest" id="btnAddRekap">${ICON.plus}Input Kasus Baru</button>
+    </div>
+    <div class="panel">
+      <div class="filter-bar">
+        <div class="search">${ICON.drop}<input id="rkSearch" placeholder="Cari nama, no. pelanggan, atau no. WM..."></div>
+        <select id="rkStatus"><option value="">Semua Status</option><option>Belum</option><option>Proses</option><option>Selesai</option></select>
+        <select id="rkJenis"><option value="">Semua Jenis</option><option>WM tertukar dengan pelanggan lain</option><option>Kesalahan input admin</option><option>Duplikasi data pelanggan</option><option>WM rusak dan tertukar</option></select>
+      </div>
+      <div class="table-scroll"><table class="data-table"><thead><tr><th>Tanggal</th><th>Pelanggan</th><th>WM Terpasang</th><th>WM Seharusnya</th><th>Jenis Kesalahan</th><th>Petugas</th><th>Status</th><th>Aksi</th></tr></thead><tbody id="rkBody"></tbody></table></div>
+      <div class="table-foot"><span id="rkCount"></span></div>
+    </div>
+  `;
+  applyRolePermissions();
+  $('#btnAddRekap').addEventListener('click', ()=> openRekapModal(null));
+
+  async function loadRekap() {
+    const params = new URLSearchParams({
+      search: document.getElementById('rkSearch').value,
+      status: document.getElementById('rkStatus').value,
+      jenis: document.getElementById('rkJenis').value
+    });
+    try {
+      const json = await apiFetch(`/rekap?${params}`);
+      const data = json.data || [];
+      document.getElementById('rkCountInfo').textContent = `${data.length} kasus tercatat`;
+      document.getElementById('rkCount').textContent = `Menampilkan ${data.length} kasus`;
+      const tbody = document.getElementById('rkBody');
+      tbody.innerHTML = data.length ? data.map(r=>`
+        <tr>
+          <td class="cell-mono">${r.tanggal}</td>
+          <td><span class="cell-strong">${esc(r.nama_pelanggan||'')}</span><div class="cell-sub">${esc(r.no_pelanggan||'')}</div></td>
+          <td class="cell-mono">${r.wm_terpasang_seri||'-'}</td>
+          <td class="cell-mono">${r.wm_seharusnya_seri||'-'}</td>
+          <td>${esc(r.jenis_kesalahan||'')}</td>
+          <td>${esc(r.nama_petugas||'')}</td>
+          <td>${pill(r.status)}</td>
+          <td><div class="row-actions">
+            <button class="icon-btn" data-view="${r.id}">${ICON.edit}</button>
+            <button class="icon-btn danger admin-only" data-del="${r.id}">${ICON.trash}</button>
+          </div></td>
+        </tr>
+      `).join('') : `<tr><td colspan="8"><div class="empty-state">${ICON.empty}<p>Belum ada kasus yang cocok.</p></div></td></tr>`;
+      attachRekapEvents(loadRekap);
+      applyRolePermissions();
+    } catch(e) { toast('Gagal memuat data rekap'); }
+  }
+
+  document.getElementById('rkSearch').addEventListener('input', loadRekap);
+  document.getElementById('rkStatus').addEventListener('change', loadRekap);
+  document.getElementById('rkJenis').addEventListener('change', loadRekap);
+  loadRekap();
+}
+
+function attachRekapEvents(refreshFn) {
+  document.querySelectorAll('#rkBody [data-del]').forEach(b=>{
+    b.addEventListener('click', async ()=>{
+      if(!confirm('Hapus kasus ini?')) return;
+      try {
+        await apiFetch(`/rekap/${b.dataset.del}`, { method: 'DELETE' });
+        toast('Kasus dihapus');
+        refreshFn();
+      } catch(e) { toast('Gagal hapus: '+e.message); }
+    });
+  });
+  document.querySelectorAll('#rkBody [data-view]').forEach(b=>{
+    b.addEventListener('click', async ()=>{
+      try {
+        const json = await apiFetch(`/rekap/${b.dataset.view}`);
+        openRekapModal(json.data);
+      } catch(e) { toast('Gagal ambil data kasus'); }
+    });
+  });
+}
+
+function openRekapModal(existing) {
+  const isEdit = !!existing;
+  const m = mountModal(`
+    <div class="modal-head"><h3>${isEdit?'Detail / Ubah Kasus':'Input Kasus Ketidaksesuaian'}</h3><button class="modal-close" data-close>${ICON.x}</button></div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="field"><label>Tanggal</label><input id="fRkTgl" type="date" value="${isEdit?existing.tanggal:'2026-08-07'}"></div>
+        <div class="field"><label>Petugas</label><input id="fRkPetugasNama" value="${esc(state.userName)}" disabled></div>
+        <div class="field full"><label>Pelanggan</label>
+          <div class="ss-wrap">
+            <input type="text" id="fRkPelangganSearch" placeholder="Ketik no. pelanggan atau nama..." autocomplete="off">
+            <input type="hidden" id="fRkPelanggan">
+            <div class="ss-dropdown" id="fRkPelangganDropdown"></div>
+          </div>
+        </div>
+        <div class="field"><label>No. WM Terpasang (saat ini)</label>
+          <div class="ss-wrap">
+            <input type="text" id="fRkWmASearch" placeholder="Ketik no. seri WM..." autocomplete="off">
+            <input type="hidden" id="fRkWmA">
+            <div class="ss-dropdown" id="fRkWmADropdown"></div>
+          </div>
+        </div>
+        <div class="field"><label>No. WM Seharusnya</label>
+          <div class="ss-wrap">
+            <input type="text" id="fRkWmBSearch" placeholder="Ketik no. seri WM..." autocomplete="off">
+            <input type="hidden" id="fRkWmB">
+            <div class="ss-dropdown" id="fRkWmBDropdown"></div>
+          </div>
+        </div>
+        <div class="field full"><label>Jenis Kesalahan</label><select id="fRkJenis"><option ${existing?.jenis_kesalahan?.includes('tertukar')?'selected':''}>WM tertukar dengan pelanggan lain</option><option ${existing?.jenis_kesalahan==='Kesalahan input admin'?'selected':''}>Kesalahan input admin</option><option ${existing?.jenis_kesalahan==='Duplikasi data pelanggan'?'selected':''}>Duplikasi data pelanggan</option><option ${existing?.jenis_kesalahan==='WM rusak dan tertukar'?'selected':''}>WM rusak dan tertukar</option></select></div>
+        <div class="field full"><label>Keterangan</label><textarea id="fRkKet">${isEdit?esc(existing.keterangan||''):''}</textarea></div>
+        <div class="field"><label>Status Tindak Lanjut</label><select id="fRkStatus"><option ${existing?.status==='Belum'?'selected':''}>Belum</option><option ${existing?.status==='Proses'?'selected':''}>Proses</option><option ${existing?.status==='Selesai'?'selected':''}>Selesai</option></select></div>
+      </div>
+    </div>
+    <div class="modal-foot"><button class="btn btn-outline" data-close>Batal</button><button class="btn btn-forest" id="fRkSave">${ICON.check}Simpan Kasus</button></div>
+  `);
+
+  (async ()=>{
+    try {
+      const pelJson = await apiFetch('/pelanggan');
+      const pelData = pelJson.data || [];
+      initSearchableSelect({
+        inputEl: m.querySelector('#fRkPelangganSearch'),
+        hiddenEl: m.querySelector('#fRkPelanggan'),
+        dropdownEl: m.querySelector('#fRkPelangganDropdown'),
+        data: pelData,
+        getLabel: p => `${p.no_pelanggan} — ${p.nama}`,
+        initialId: existing?.id_pelanggan
+      });
+
+      const wmJson = await apiFetch('/meter');
+      const wmData = wmJson.data || [];
+      const getWmLabel = w => `${w.no_seri} (${w.merk})`;
+      initSearchableSelect({
+        inputEl: m.querySelector('#fRkWmASearch'),
+        hiddenEl: m.querySelector('#fRkWmA'),
+        dropdownEl: m.querySelector('#fRkWmADropdown'),
+        data: wmData,
+        getLabel: getWmLabel,
+        initialId: existing?.id_wm_terpasang
+      });
+      initSearchableSelect({
+        inputEl: m.querySelector('#fRkWmBSearch'),
+        hiddenEl: m.querySelector('#fRkWmB'),
+        dropdownEl: m.querySelector('#fRkWmBDropdown'),
+        data: wmData,
+        getLabel: getWmLabel,
+        initialId: existing?.id_wm_seharusnya
+      });
+    } catch(e) { toast('Gagal muat data referensi'); }
+  })();
+
+  m.querySelector('#fRkSave').addEventListener('click', async ()=>{
+    const data = {
+      tanggal: m.querySelector('#fRkTgl').value || '2026-08-07',
+      id_pelanggan: m.querySelector('#fRkPelanggan').value,
+      id_wm_terpasang: m.querySelector('#fRkWmA').value || null,
+      id_wm_seharusnya: m.querySelector('#fRkWmB').value || null,
+      jenis_kesalahan: m.querySelector('#fRkJenis').value,
+      keterangan: m.querySelector('#fRkKet').value.trim(),
+      status: m.querySelector('#fRkStatus').value,
+      id_petugas: state.userId
+    };
+    try {
+      if(isEdit) {
+        await apiFetch(`/rekap/${existing.id}`, { method: 'PUT', body: JSON.stringify(data) });
+        toast('Kasus diperbarui');
+      } else {
+        await apiFetch('/rekap', { method: 'POST', body: JSON.stringify(data) });
+        toast('Kasus baru dicatat');
+      }
+      closeModal();
+      navigate('rekap');
+    } catch(e) { toast('Gagal simpan: '+e.message); }
+  });
+}
+
+
+/* ============================================================
+   VERIFIKASI BACA METER
+   ============================================================ */
+async function renderPembacaan(root){
+  root.innerHTML = `
+    <div class="page-head"><div><h1>Verifikasi Baca Meter</h1><p id="pbCountInfo">Memuat...</p></div>
+      <button class="btn btn-forest" id="btnAddPb">${ICON.plus}Input Hasil Baca</button>
+    </div>
+    <div class="panel">
+      <div class="filter-bar">
+        <div class="search">${ICON.drop}<input id="pbSearch" placeholder="Cari IDPEL, nama, atau alamat..."></div>
+        <select id="pbStatus"><option value="">Semua Status Verifikasi</option><option>Menunggu</option><option>Disetujui</option><option>Perlu Feedback</option></select>
+        <select id="pbKode"><option value="">Semua Kode Pesan</option><option>Normal</option><option>Buram Terbaca</option><option>WM Rusak</option><option>WM Mati</option></select>
+      </div>
+      <div class="table-scroll"><table class="data-table"><thead><tr>
+        <th>IDPEL</th><th>Nama</th><th>Alamat</th><th>Kode Pesan</th><th>Stan Lalu</th><th>Stan Baca</th><th>Pemakaian</th><th>Rata-rata</th><th>Telat Baca</th><th>Foto</th><th>Verifikasi</th><th>Aksi</th>
+      </tr></thead><tbody id="pbBody"></tbody></table></div>
+      <div class="table-foot"><span id="pbCount"></span></div>
+    </div>
+  `;
+  $('#btnAddPb').addEventListener('click', ()=> openPembacaanModal(null));
+
+  async function loadPembacaan() {
+    const params = new URLSearchParams({
+      search: document.getElementById('pbSearch').value,
+      status: document.getElementById('pbStatus').value,
+      kode: document.getElementById('pbKode').value
+    });
+    try {
+      const json = await apiFetch(`/pembacaan?${params}`);
+      const data = json.data || [];
+      document.getElementById('pbCountInfo').textContent = `${data.length} data pembacaan meter`;
+      document.getElementById('pbCount').textContent = `Menampilkan ${data.length} baris`;
+
+      const tbody = document.getElementById('pbBody');
+      tbody.innerHTML = data.length ? data.map(r=>`
+        <tr>
+          <td class="cell-mono cell-strong">${esc(r.idpel)}</td>
+          <td>${esc(r.nama)}</td>
+          <td>${esc(r.alamat)}</td>
+          <td>${pill(r.kode_pesan)}</td>
+          <td class="cell-mono">${r.stan_lalu}</td>
+          <td class="cell-mono">${r.stan_baca}</td>
+          <td class="cell-mono">${r.pemakaian}</td>
+          <td class="cell-mono">${r.rata_rata_pemakaian}</td>
+          <td>${r.telat_baca_hari} Hari</td>
+          <td>${r.foto_drive_url ? `<div class="foto-cell"><a href="${esc(r.foto_drive_url)}" target="_blank" rel="noopener" class="btn btn-outline btn-sm">Lihat Foto</a><button class="icon-btn icon-btn-xs" data-foto-edit="${r.id}" title="Ganti foto dari Drive">${ICON.edit}</button><button class="icon-btn icon-btn-xs danger" data-foto-remove="${r.id}" title="Hapus link foto">${ICON.trash}</button></div>` : `<button class="link-btn" data-foto-add="${r.id}" title="Klik untuk pilih foto dari Drive">Belum ada</button>`}</td>
+          <td>${pill(r.verifikasi_status)}</td>
+          <td><div class="row-actions"><button class="icon-btn" data-detail="${r.id}">${ICON.edit}</button></div></td>
+        </tr>
+      `).join('') : `<tr><td colspan="12"><div class="empty-state">${ICON.empty}<p>Belum ada data pembacaan meter.</p></div></td></tr>`;
+
+      tbody.querySelectorAll('[data-detail]').forEach(b=>{
+        b.addEventListener('click', async ()=>{
+          try {
+            const j = await apiFetch(`/pembacaan/${b.dataset.detail}`);
+            openPembacaanModal(j.data);
+          } catch(e) { toast('Gagal ambil detail data'); }
+        });
+      });
+
+      tbody.querySelectorAll('[data-foto-add], [data-foto-edit]').forEach(b=>{
+        b.addEventListener('click', async (e)=>{
+          e.stopPropagation();
+          const id = b.dataset.fotoAdd || b.dataset.fotoEdit;
+          const row = data.find(x => String(x.id) === String(id));
+          if (!row) return;
+          openFotoLinkModal(row.foto_drive_url || '', async (newUrl) => {
+            try {
+              await apiFetch(`/pembacaan/${id}`, {
+                method: 'PUT',
+                body: JSON.stringify({
+                  id_pelanggan: row.id_pelanggan,
+                  idpel: row.idpel,
+                  nama: row.nama,
+                  alamat: row.alamat,
+                  kode_pesan: row.kode_pesan,
+                  telat_baca_hari: row.telat_baca_hari,
+                  stan_lalu: row.stan_lalu,
+                  stan_baca: row.stan_baca,
+                  rata_rata_pemakaian: row.rata_rata_pemakaian,
+                  foto_drive_url: newUrl,
+                })
+              });
+              toast('Link foto disimpan');
+              loadPembacaan();
+            } catch(err) { toast(err.message || 'Gagal menyimpan link foto'); }
+          });
+        });
+      });
+
+      tbody.querySelectorAll('[data-foto-remove]').forEach(b=>{
+        b.addEventListener('click', async (e)=>{
+          e.stopPropagation();
+          const id = b.dataset.fotoRemove;
+          const row = data.find(x => String(x.id) === String(id));
+          if (!row) return;
+          if (!confirm('Hapus link foto ini?')) return;
+          try {
+            await apiFetch(`/pembacaan/${id}`, {
+              method: 'PUT',
+              body: JSON.stringify({
+                id_pelanggan: row.id_pelanggan,
+                idpel: row.idpel, nama: row.nama, alamat: row.alamat,
+                kode_pesan: row.kode_pesan, telat_baca_hari: row.telat_baca_hari,
+                stan_lalu: row.stan_lalu, stan_baca: row.stan_baca,
+                rata_rata_pemakaian: row.rata_rata_pemakaian, foto_drive_url: null,
+              })
+            });
+            toast('Link foto dihapus');
+            loadPembacaan();
+          } catch(err) { toast(err.message || 'Gagal menghapus link foto'); }
+        });
+      });
+    } catch(e) { toast('Gagal memuat data pembacaan meter'); }
+  }
+
+  document.getElementById('pbSearch').addEventListener('input', loadPembacaan);
+  document.getElementById('pbStatus').addEventListener('change', loadPembacaan);
+  document.getElementById('pbKode').addEventListener('change', loadPembacaan);
+  loadPembacaan();
+
+  function openPembacaanModal(existing) {
+    const isEdit = !!existing;
+    const m = mountModal(`
+      <div class="modal-head"><h3>${isEdit?'Detail / Verifikasi Pembacaan':'Input Hasil Baca Meter'}</h3><button class="modal-close" data-close>${ICON.x}</button></div>
+      <div class="modal-body">
+        ${isEdit ? `<div style="margin-bottom:14px;">${pill(existing.verifikasi_status)} ${existing.nama_petugas_verifikasi ? `<span class="cell-sub">oleh ${esc(existing.nama_petugas_verifikasi)}</span>` : ''}</div>` : ''}
+        <div class="form-grid">
+          <div class="field"><label>IDPEL</label><input id="fPbIdpel" value="${isEdit?esc(existing.idpel):''}" placeholder="000000"></div>
+          <div class="field"><label>Nama Pelanggan</label><input id="fPbNama" value="${isEdit?esc(existing.nama):''}"></div>
+          <div class="field full"><label>Alamat</label><input id="fPbAlamat" value="${isEdit?esc(existing.alamat):''}"></div>
+          <div class="field"><label>Kode Pesan</label><select id="fPbKode">
+            <option ${existing?.kode_pesan==='Normal'?'selected':''}>Normal</option>
+            <option ${existing?.kode_pesan==='Buram Terbaca'?'selected':''}>Buram Terbaca</option>
+            <option ${existing?.kode_pesan==='WM Rusak'?'selected':''}>WM Rusak</option>
+            <option ${existing?.kode_pesan==='WM Mati'?'selected':''}>WM Mati</option>
+          </select></div>
+          <div class="field"><label>Telat Baca (hari)</label><input id="fPbTelat" type="number" value="${isEdit?existing.telat_baca_hari:0}"></div>
+          <div class="field"><label>Stan Lalu</label><input id="fPbStanLalu" type="number" value="${isEdit?existing.stan_lalu:0}"></div>
+          <div class="field"><label>Stan Baca</label><input id="fPbStanBaca" type="number" value="${isEdit?existing.stan_baca:0}"></div>
+          <div class="field"><label>Rata-rata Pemakaian</label><input id="fPbRata" type="number" value="${isEdit?existing.rata_rata_pemakaian:0}"></div>
+          <div class="field full"><label>Link Foto (Google Drive)</label><input id="fPbFoto" value="${isEdit?esc(existing.foto_drive_url||''):''}" placeholder="https://drive.google.com/..."></div>
+          ${isEdit && existing.verifikasi_status==='Perlu Feedback' && existing.catatan_feedback ? `<div class="field full"><label>Catatan Feedback Sebelumnya</label><textarea disabled>${esc(existing.catatan_feedback)}</textarea></div>` : ''}
+        </div>
+      </div>
+      <div class="modal-foot">
+        ${isEdit ? `<button class="btn btn-danger-outline" id="fPbFeedback">Beri Feedback</button><button class="btn btn-water" id="fPbApprove">${ICON.check}Approve</button>` : ''}
+        <button class="btn btn-outline" data-close>Batal</button>
+        <button class="btn btn-forest" id="fPbSave">${ICON.check}Simpan</button>
+      </div>
+    `);
+
+    m.querySelector('#fPbSave').addEventListener('click', async ()=>{
+      const data = {
+        ...(isEdit ? { id_pelanggan: existing.id_pelanggan } : {}),
+        idpel: m.querySelector('#fPbIdpel').value.trim(),
+        nama: m.querySelector('#fPbNama').value.trim(),
+        alamat: m.querySelector('#fPbAlamat').value.trim(),
+        kode_pesan: m.querySelector('#fPbKode').value,
+        telat_baca_hari: parseInt(m.querySelector('#fPbTelat').value) || 0,
+        stan_lalu: parseInt(m.querySelector('#fPbStanLalu').value) || 0,
+        stan_baca: parseInt(m.querySelector('#fPbStanBaca').value) || 0,
+        rata_rata_pemakaian: parseInt(m.querySelector('#fPbRata').value) || 0,
+        foto_drive_url: m.querySelector('#fPbFoto').value.trim() || null,
+      };
+      try {
+        if (isEdit) {
+          await apiFetch(`/pembacaan/${existing.id}`, { method:'PUT', body: JSON.stringify(data) });
+          toast('Data pembacaan diperbarui');
+        } else {
+          await apiFetch('/pembacaan', { method:'POST', body: JSON.stringify(data) });
+          toast('Data pembacaan ditambahkan');
+        }
+        closeModal();
+        navigate('pembacaan');
+      } catch(e) { toast('Gagal simpan: '+e.message); }
+    });
+
+    if (isEdit) {
+      m.querySelector('#fPbApprove').addEventListener('click', async ()=>{
+        try {
+          await apiFetch(`/pembacaan/${existing.id}/verifikasi`, { method:'PUT', body: JSON.stringify({ aksi:'Approve' }) });
+          toast('Pembacaan disetujui');
+          closeModal();
+          navigate('pembacaan');
+        } catch(e) { toast('Gagal approve: '+e.message); }
+      });
+      m.querySelector('#fPbFeedback').addEventListener('click', async ()=>{
+        const catatan = prompt('Tulis catatan feedback untuk petugas:');
+        if (catatan === null) return;
+        try {
+          await apiFetch(`/pembacaan/${existing.id}/verifikasi`, { method:'PUT', body: JSON.stringify({ aksi:'Feedback', catatan }) });
+          toast('Feedback terkirim');
+          closeModal();
+          navigate('pembacaan');
+        } catch(e) { toast('Gagal kirim feedback: '+e.message); }
+      });
+    }
+  }
+}
+
+
+/* ============================================================
+   PENCARIAN
+   ============================================================ */
+async function renderPencarian(root){
+  root.innerHTML = `
+    <div class="page-head"><div><h1>Pencarian Data</h1><p>Cari data pelanggan, water meter, dan kasus rekap sekaligus</p></div></div>
+    <div class="panel" style="margin-bottom:18px;">
+      <div class="panel-body">
+        <div class="filter-bar" style="border:none; padding:0; margin:0;">
+          <div class="search" style="border-color:var(--forest-700);">${ICON.drop}<input id="gSearch" placeholder="Ketik nomor pelanggan, nama, atau nomor WM..." autofocus></div>
+        </div>
+      </div>
+    </div>
+    <div id="gResults"></div>
+  `;
+
+  async function search() {
+    const q = document.getElementById('gSearch').value.trim().toLowerCase();
+    const results = document.getElementById('gResults');
+    if(!q) { results.innerHTML = `<div class="panel"><div class="empty-state">${ICON.empty}<p>Mulai ketik untuk mencari di seluruh data.</p></div></div>`; return; }
+
+    try {
+      const [pelJson, wmJson, rkJson] = await Promise.all([
+        apiFetch(`/pelanggan?search=${encodeURIComponent(q)}`),
+        apiFetch(`/meter?search=${encodeURIComponent(q)}`),
+        apiFetch(`/rekap?search=${encodeURIComponent(q)}`)
+      ]);
+      const pel = pelJson.data || [];
+      const wm = wmJson.data || [];
+      const rk = rkJson.data || [];
+
+      results.innerHTML = `
+        <div class="panel" style="margin-bottom:16px;"><div class="panel-head"><h3>Pelanggan</h3><span class="pill neutral">${pel.length} hasil</span></div>
+          <div class="table-scroll"><table class="data-table"><thead><tr><th>No. Pelanggan</th><th>Nama</th><th>Alamat</th><th>Status</th></tr></thead>
+          <tbody>${pel.length?pel.map(p=>`<tr><td class="cell-mono cell-strong">${esc(p.no_pelanggan)}</td><td>${esc(p.nama)}</td><td>${esc(p.alamat)}</td><td>${pill(p.status)}</td></tr>`).join(''):'<tr><td colspan="4" style="text-align:center;color:var(--ink-300);padding:18px;">Tidak ada hasil</td></tr>'}</tbody></table></div></div>
+        <div class="panel" style="margin-bottom:16px;"><div class="panel-head"><h3>Water Meter</h3><span class="pill neutral">${wm.length} hasil</span></div>
+          <div class="table-scroll"><table class="data-table"><thead><tr><th>No. Seri</th><th>Merk</th><th>Kondisi</th></tr></thead>
+          <tbody>${wm.length?wm.map(w=>`<tr><td class="cell-mono cell-strong">${esc(w.no_seri)}</td><td>${esc(w.merk)}</td><td>${pill(w.kondisi)}</td></tr>`).join(''):'<tr><td colspan="3" style="text-align:center;color:var(--ink-300);padding:18px;">Tidak ada hasil</td></tr>'}</tbody></table></div></div>
+        <div class="panel"><div class="panel-head"><h3>Kasus Rekap</h3><span class="pill neutral">${rk.length} hasil</span></div>
+          <div class="table-scroll"><table class="data-table"><thead><tr><th>Tanggal</th><th>Pelanggan</th><th>WM Terpasang</th><th>Status</th></tr></thead>
+          <tbody>${rk.length?rk.map(r=>`<tr><td class="cell-mono">${r.tanggal}</td><td>${esc(r.nama_pelanggan||'')}</td><td class="cell-mono">${r.wm_terpasang_seri||'-'}</td><td>${pill(r.status)}</td></tr>`).join(''):'<tr><td colspan="4" style="text-align:center;color:var(--ink-300);padding:18px;">Tidak ada hasil</td></tr>'}</tbody></table></div></div>
+      `;
+    } catch(e) { toast('Gagal mencari data'); }
+  }
+
+  document.getElementById('gSearch').addEventListener('input', search);
+  search();
+}
+
+
+/* ============================================================
+   PROFIL SAYA
+   ============================================================ */
+async function renderProfile(root){
+  root.innerHTML = `<div class="page-head"><div><h1>Profil Saya</h1><p>Memuat data...</p></div></div>`;
+  let profil;
+  try {
+    const json = await apiFetch('/profile');
+    profil = json.data;
+  } catch(e) {
+    root.innerHTML = `<div class="panel">Gagal memuat profil. Coba muat ulang halaman.</div>`;
+    return;
+  }
+
+  const isAdmin = profil.role === 'Admin';
+  const fotoSrc = profil.foto || null;
+  const inisial = (profil.nama || 'A').slice(0,1).toUpperCase();
+
+  let cooldownInfo = '';
+  if (!isAdmin && profil.nama_last_changed_at) {
+    const lastChanged = new Date(profil.nama_last_changed_at);
+    const bolehLagi = new Date(lastChanged.getTime() + 30*24*60*60*1000);
+    if (bolehLagi > new Date()) {
+      cooldownInfo = `<p style="font-size:12.5px; color:var(--gold-600,#b9791f); margin-top:6px;">Nama baru bisa diganti lagi mulai ${bolehLagi.toLocaleDateString('id-ID',{day:'2-digit',month:'long',year:'numeric'})}.</p>`;
+    }
+  }
+
+  const aboutSection = `
+    <div class="panel" style="max-width:640px; margin-top:18px;">
+      <h3 style="margin:0 0 10px; font-size:15px;">Tentang PERUMDA Air Minum Tirtarangga</h3>
+      <p style="font-size:13.5px; color:var(--ink-700,#444); line-height:1.7; margin:0 0 18px;">
+        PERUMDA Air Minum Tirtarangga Kabupaten Subang &mdash; Cabang Ranggawulung melayani penyediaan air bersih bagi pelanggan di wilayah kerjanya. Pelayanan yang akurat, termasuk kesesuaian data pelanggan dan unit water meter, menjadi bagian penting dari kualitas layanan kepada masyarakat.
+      </p>
+      <h3 style="margin:0 0 10px; font-size:15px;">Tentang Aplikasi SIRAWM</h3>
+      <p style="font-size:13.5px; color:var(--ink-700,#444); line-height:1.7; margin:0 0 18px;">
+        SIRAWM (Sistem Rekap Ketidaksesuaian Water Meter) membantu petugas dan admin mencatat, melacak, dan menindaklanjuti kasus ketidaksesuaian antara data pelanggan dengan unit water meter yang terpasang di lapangan &mdash; mulai dari pencatatan kasus, pemantauan status tindak lanjut, hingga pembuatan laporan periodik.
+      </p>
+      <h3 style="margin:0 0 10px; font-size:15px;">Manfaat Halaman Profil</h3>
+      <p style="font-size:13.5px; color:var(--ink-700,#444); line-height:1.7; margin:0;">
+        Halaman profil membantu memastikan setiap tindakan dalam sistem tercatat atas nama akun yang jelas, memudahkan identifikasi Admin dan Petugas yang menangani suatu kasus, serta menjaga akuntabilitas data yang diinput ke dalam SIRAWM.
+      </p>
+    </div>
+  `;
+
+  root.innerHTML = `
+    <div class="page-head"><div><h1>Profil Saya</h1><p>${isAdmin ? 'Profil Administrator' : 'Kelola foto, nama, dan data diri kamu'}</p></div></div>
+    <div class="panel" style="max-width:640px;">
+      <div style="display:flex; align-items:center; gap:18px; ${isAdmin ? '' : 'margin-bottom:24px;'}">
+        <div style="position:relative;">
+          <div id="profileAvatarWrap" style="width:84px; height:84px; border-radius:50%; overflow:hidden; background:linear-gradient(135deg,var(--forest-600,#1a5c4a),var(--forest-800,#0d3a2e)); display:flex; align-items:center; justify-content:center; color:#fff; font-size:32px; font-weight:700;">
+            ${fotoSrc ? `<img src="${fotoSrc}" style="width:100%; height:100%; object-fit:cover;">` : inisial}
+          </div>
+          ${!isAdmin ? `<label for="fotoInput" style="position:absolute; bottom:-2px; right:-2px; width:30px; height:30px; border-radius:50%; background:var(--brand-600,#1e6091); color:#fff; display:flex; align-items:center; justify-content:center; cursor:pointer; border:2px solid #fff;">${ICON.edit}<input type="file" id="fotoInput" accept="image/*" style="display:none;"></label>` : ''}
+        </div>
+        <div>
+          <div style="font-size:18px; font-weight:700;">${esc(profil.nama)}</div>
+          <div style="font-size:13px; color:var(--ink-500,#888);">${esc(profil.username)} &middot; ${profil.role}</div>
+        </div>
+      </div>
+
+      ${isAdmin ? '' : `
+      <form id="profileForm">
+        <div class="field">
+          <label>Nama Lengkap</label>
+          <div class="input-wrap"><input id="pfNama" type="text" value="${esc(profil.nama)}"></div>
+          ${cooldownInfo}
+        </div>
+        <div class="field">
+          <label>Alamat</label>
+          <div class="input-wrap"><input id="pfAlamat" type="text" value="${esc(profil.alamat||'')}" placeholder="Alamat lengkap"></div>
+        </div>
+        <div style="display:flex; gap:12px;">
+          <div class="field" style="flex:1;">
+            <label>Tempat Lahir</label>
+            <div class="input-wrap"><input id="pfTempatLahir" type="text" value="${esc(profil.tempat_lahir||'')}"></div>
+          </div>
+          <div class="field" style="flex:1;">
+            <label>Tanggal Lahir</label>
+            <div class="input-wrap"><input id="pfTanggalLahir" type="date" value="${profil.tanggal_lahir ? String(profil.tanggal_lahir).slice(0,10) : ''}"></div>
+          </div>
+        </div>
+        <div class="field">
+          <label>Wilayah Penugasan</label>
+          <div class="input-wrap"><input type="text" value="${esc(profil.penugasan||'-')}" disabled></div>
+        </div>
+        <button type="submit" class="btn-primary" style="margin-top:10px;">Simpan Perubahan</button>
+      </form>
+      `}
+    </div>
+    ${isAdmin ? aboutSection : ''}
+  `;
+
+  if (isAdmin) return;
+
+  let fotoBaruBase64 = null;
+  document.getElementById('fotoInput').addEventListener('change', async (e)=>{
+    const file = e.target.files[0];
+    if (!file) return;
+    if (file.size > 2*1024*1024) { toast('Ukuran foto maksimal 2MB'); return; }
+    fotoBaruBase64 = await blobToBase64Full(file);
+    document.getElementById('profileAvatarWrap').innerHTML = `<img src="${fotoBaruBase64}" style="width:100%; height:100%; object-fit:cover;">`;
+  });
+
+  document.getElementById('profileForm').addEventListener('submit', async (e)=>{
+    e.preventDefault();
+    const body = {
+      nama: document.getElementById('pfNama').value.trim(),
+      alamat: document.getElementById('pfAlamat').value.trim(),
+      tempat_lahir: document.getElementById('pfTempatLahir').value.trim(),
+      tanggal_lahir: document.getElementById('pfTanggalLahir').value || null,
+    };
+    if (fotoBaruBase64) body.foto = fotoBaruBase64;
+
+    try {
+      const json = await apiFetch('/profile', { method:'PUT', body: JSON.stringify(body) });
+      state.userName = json.data.nama;
+      $('#sbUserName').textContent = state.userName;
+      $('#sbAvatar').textContent = state.userName.slice(0,1).toUpperCase();
+      toast('Profil berhasil diperbarui');
+      navigate('profile');
+    } catch(err) {
+      toast(err.message || 'Gagal menyimpan profil');
+    }
+  });
+}
+
+function blobToBase64Full(blob){
+  return new Promise((resolve, reject)=>{
+    const reader = new FileReader();
+    reader.onloadend = ()=> resolve(reader.result); // termasuk prefix data:image/...;base64,
+    reader.onerror = reject;
+    reader.readAsDataURL(blob);
+  });
+}
+
+
+/* ============================================================
+   MANAJEMEN PETUGAS
+   ============================================================ */
+async function renderManajemenPetugas(root){
+  root.innerHTML = `
+    <div class="page-head"><div><h1>Manajemen Petugas</h1><p>Tambah dan kelola akun Petugas Lapangan</p></div>
+      <button class="btn btn-forest" id="btnTambahPetugas">${ICON.plus}Tambah Petugas</button>
+    </div>
+    <div class="panel"><div class="table-scroll"><table class="data-table">
+      <thead><tr><th>Nama</th><th>Username</th><th>Wilayah Penugasan</th><th>Status</th><th></th></tr></thead>
+      <tbody id="petugasTbody"><tr><td colspan="5">Memuat data...</td></tr></tbody>
+    </table></div></div>
+  `;
+
+  async function loadPetugas(){
+    const tbody = document.getElementById('petugasTbody');
+    try {
+      const json = await apiFetch('/users');
+      const list = (json.data || []).filter(u => u.role === 'Petugas');
+      tbody.innerHTML = list.length ? list.map(u => `
+        <tr>
+          <td>${esc(u.nama)}</td>
+          <td class="cell-mono">${esc(u.username)}</td>
+          <td>${esc(u.penugasan || '-')}</td>
+          <td>${pill(u.is_active ? 'Aktif' : 'Nonaktif')}</td>
+          <td><button class="btn btn-outline btn-sm" data-edit="${u.id}">${ICON.edit}Edit</button></td>
+        </tr>
+      `).join('') : `<tr><td colspan="5">Belum ada akun Petugas</td></tr>`;
+
+      tbody.querySelectorAll('[data-edit]').forEach(btn=>{
+        btn.addEventListener('click', ()=>{
+          const u = list.find(x => String(x.id) === btn.dataset.edit);
+          bukaModalPetugas(u);
+        });
+      });
+    } catch(e) {
+      tbody.innerHTML = `<tr><td colspan="5">Gagal memuat data petugas</td></tr>`;
+    }
+  }
+
+  function bukaModalPetugas(existing){
+    const isEdit = !!existing;
+    mountModal(`
+      <div class="modal-head"><h3>${isEdit ? 'Edit Petugas' : 'Tambah Petugas Baru'}</h3><button class="modal-close" data-close>${ICON.x}</button></div>
+      <form id="formPetugas" style="padding:20px;">
+        <div class="field"><label>Nama Lengkap</label><div class="input-wrap"><input id="mpNama" required value="${isEdit ? esc(existing.nama) : ''}"></div></div>
+        <div class="field"><label>Username</label><div class="input-wrap"><input id="mpUsername" required ${isEdit ? 'disabled' : ''} value="${isEdit ? esc(existing.username) : ''}"></div></div>
+        <div class="field"><label>${isEdit ? 'Password Baru (kosongkan jika tidak diubah)' : 'Password'}</label><div class="input-wrap"><input id="mpPassword" type="password" ${isEdit ? '' : 'required'}></div></div>
+        <div class="field"><label>Wilayah Penugasan</label><div class="input-wrap"><input id="mpPenugasan" value="${isEdit ? esc(existing.penugasan||'') : ''}" placeholder="Misal: Rayon 1"></div></div>
+        <div class="field"><label>Alamat</label><div class="input-wrap"><input id="mpAlamat" value="${isEdit ? esc(existing.alamat||'') : ''}"></div></div>
+        <div style="display:flex; gap:12px;">
+          <div class="field" style="flex:1;"><label>Tempat Lahir</label><div class="input-wrap"><input id="mpTempatLahir" value="${isEdit ? esc(existing.tempat_lahir||'') : ''}"></div></div>
+          <div class="field" style="flex:1;"><label>Tanggal Lahir</label><div class="input-wrap"><input id="mpTanggalLahir" type="date" value="${isEdit && existing.tanggal_lahir ? String(existing.tanggal_lahir).slice(0,10) : ''}"></div></div>
+        </div>
+        ${isEdit ? `<div class="field"><label><input type="checkbox" id="mpAktif" ${existing.is_active ? 'checked' : ''}> Akun aktif</label></div>` : ''}
+        <button type="submit" class="btn-primary" style="margin-top:8px;">${isEdit ? 'Simpan Perubahan' : 'Tambah Petugas'}</button>
+      </form>
+    `);
+
+    document.getElementById('formPetugas').addEventListener('submit', async (e)=>{
+      e.preventDefault();
+      const body = {
+        nama: document.getElementById('mpNama').value.trim(),
+        penugasan: document.getElementById('mpPenugasan').value.trim(),
+        alamat: document.getElementById('mpAlamat').value.trim(),
+        tempat_lahir: document.getElementById('mpTempatLahir').value.trim(),
+        tanggal_lahir: document.getElementById('mpTanggalLahir').value || null,
+      };
+      const pass = document.getElementById('mpPassword').value;
+
+      try {
+        if (isEdit) {
+          if (pass) body.password = pass;
+          body.is_active = document.getElementById('mpAktif').checked;
+          await apiFetch(`/users/${existing.id}`, { method:'PUT', body: JSON.stringify(body) });
+          toast('Data Petugas berhasil diperbarui');
+        } else {
+          body.username = document.getElementById('mpUsername').value.trim();
+          body.password = pass;
+          await apiFetch('/users', { method:'POST', body: JSON.stringify(body) });
+          toast('Petugas baru berhasil ditambahkan');
+        }
+        closeModal();
+        loadPetugas();
+      } catch(err) {
+        toast(err.message || 'Gagal menyimpan data');
+      }
+    });
+  }
+
+  document.getElementById('btnTambahPetugas').addEventListener('click', ()=> bukaModalPetugas(null));
+  loadPetugas();
+}
+
+
+/* ============================================================
+   MODAL HELPERS
+   ============================================================ */
+function mountModal(innerHtml){
+  closeModal();
+  const backdrop = document.createElement('div');
+  backdrop.className = 'modal-backdrop';
+  backdrop.id = 'activeModal';
+  backdrop.innerHTML = `<div class="modal">${innerHtml}</div>`;
+  document.body.appendChild(backdrop);
+  backdrop.addEventListener('click', e=>{ if(e.target===backdrop) closeModal(); });
+  backdrop.querySelectorAll('[data-close]').forEach(b=> b.addEventListener('click', closeModal));
+  return backdrop;
+}
+function closeModal(){ const m = document.getElementById('activeModal'); if(m) m.remove(); }
+
+/* ============================================================
+   SEARCHABLE SELECT
+   ============================================================ */
+function initSearchableSelect({ inputEl, hiddenEl, dropdownEl, data, getLabel, initialId }){
+  const MAX_SHOW = 50;
+
+  function render(query){
+    const q = query.trim().toLowerCase();
+    const filtered = !q ? data : data.filter(item => getLabel(item).toLowerCase().includes(q));
+    if (!filtered.length) {
+      dropdownEl.innerHTML = `<div class="ss-empty">Tidak ada hasil ditemukan</div>`;
+    } else {
+      const shown = filtered.slice(0, MAX_SHOW);
+      dropdownEl.innerHTML = shown.map(item => `<div class="ss-item" data-id="${item.id}">${esc(getLabel(item))}</div>`).join('')
+        + (filtered.length > MAX_SHOW ? `<div class="ss-more">Menampilkan ${MAX_SHOW} dari ${filtered.length} hasil &mdash; ketik lebih spesifik untuk mempersempit</div>` : '');
+      dropdownEl.querySelectorAll('.ss-item').forEach(el=>{
+        el.addEventListener('mousedown', (e)=>{
+          e.preventDefault(); // supaya klik terdaftar sebelum event blur menutup dropdown
+          const item = data.find(d => String(d.id) === el.dataset.id);
+          hiddenEl.value = item.id;
+          inputEl.value = getLabel(item);
+          dropdownEl.classList.remove('open');
+        });
+      });
+    }
+    dropdownEl.classList.add('open');
+  }
+
+  inputEl.addEventListener('input', ()=>{ hiddenEl.value=''; render(inputEl.value); });
+  inputEl.addEventListener('focus', ()=> render(inputEl.value));
+  inputEl.addEventListener('blur', ()=> setTimeout(()=> dropdownEl.classList.remove('open'), 150));
+
+  if (initialId) {
+    const found = data.find(d => String(d.id) === String(initialId));
+    if (found) { hiddenEl.value = found.id; inputEl.value = getLabel(found); }
+  }
+}
+
+/* ============================================================
+   GLOBAL SEARCH
+   ============================================================ */
+document.getElementById('globalSearch').addEventListener('keydown', e=>{
+  if(e.key==='Enter'){
+    const q = e.target.value;
+    navigate('pencarian');
+    setTimeout(()=>{ document.getElementById('gSearch').value=q; document.getElementById('gSearch').dispatchEvent(new Event('input')); }, 30);
+  }
+});
+
+/* ============================================================
+   INIT — halaman ini butuh login yang valid. requireAuth()
+   otomatis memulihkan sesi dari token tersimpan, atau melempar
+   ke login.html kalau belum/tidak lagi login.
+   ============================================================ */
+(async function init(){
+  const ok = await requireAuth();
+  if (!ok) return; // requireAuth sudah redirect ke login.html
+
+  $('#sbUserName').textContent = state.userName;
+  $('#sbUserRole').textContent = state.role==='Admin' ? 'Administrator Sistem' : 'Petugas Lapangan';
+  $('#sbAvatar').textContent = state.userName.slice(0,1).toUpperCase() || 'A';
+  applyRolePermissions();
+  $('#appShell').classList.remove('hidden');
+  navigate('dashboard');
+  loadNotifications();
+})();
+})();
+</script>
+</body>
+</html>
