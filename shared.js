@@ -25,6 +25,7 @@ const ICON = {
   empty:'<svg viewBox="0 0 24 24" fill="none"><path d="M4 7.5 12 3l8 4.5M4 7.5v9L12 21m-8-4.5L12 12m0 9 8-4.5v-9M12 12l8-4.5M12 12V3" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>',
   filter:'<svg viewBox="0 0 24 24" fill="none"><path d="M4 5h16l-6 7.5V19l-4 2v-8.5L4 5Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>',
   pin:'<svg viewBox="0 0 24 24" fill="none"><path d="M12 21.5s7-6.8 7-12.2A7 7 0 0 0 5 9.3c0 5.4 7 12.2 7 12.2Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><circle cx="12" cy="9.3" r="2.4" stroke="currentColor" stroke-width="1.6"/></svg>',
+  camera:'<svg viewBox="0 0 24 24" fill="none"><path d="M4 8.5A1.5 1.5 0 0 1 5.5 7h2l1-2h7l1 2h2A1.5 1.5 0 0 1 20 8.5v9A1.5 1.5 0 0 1 18.5 19h-13A1.5 1.5 0 0 1 4 17.5v-9Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><circle cx="12" cy="12.5" r="3.4" stroke="currentColor" stroke-width="1.6"/></svg>',
 };
 
 /* ============================================================
@@ -187,6 +188,62 @@ async function apiFetch(endpoint, options = {}) {
   const json = await res.json();
   if (!json.success) throw new Error(json.message || 'Gagal mengambil data');
   return json;
+}
+
+/* ============================================================
+   FITUR FOTO KAMERA + LOKASI (dipakai di Verifikasi Baca Meter)
+   ============================================================ */
+
+// Ubah koordinat GPS jadi alamat yang bisa dibaca manusia, pakai
+// layanan gratis OpenStreetMap Nominatim (tanpa API key/biaya).
+async function reverseGeocode(lat, lon){
+  try {
+    const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lon}&zoom=18`, {
+      headers: { 'Accept-Language': 'id' }
+    });
+    if (!res.ok) return null;
+    const j = await res.json();
+    return j.display_name || null;
+  } catch(e) {
+    return null; // offline / GPS di tengah hutan tanpa data jalan -> tetap lanjut tanpa alamat
+  }
+}
+
+// Format tanggal-waktu ala watermark kamera GPS, contoh:
+// "Kamis, 10 September 2026 • 12:01:50 WIB"
+function formatWaktuWatermark(date){
+  const hari = ['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'][date.getDay()];
+  const bulan = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'][date.getMonth()];
+  const jam = date.toLocaleTimeString('id-ID', { hour:'2-digit', minute:'2-digit', second:'2-digit' });
+  return `${hari}, ${date.getDate()} ${bulan} ${date.getFullYear()} \u2022 ${jam} WIB`;
+}
+
+// Menggambar kotak watermark semi-transparan (alamat, koordinat, waktu)
+// di bagian bawah canvas foto — meniru gaya aplikasi kamera GPS.
+function drawWatermarkOnCanvas(ctx, w, h, meta){
+  const { lat, lon, alamat, waktu } = meta;
+  const baris = [];
+  baris.push(alamat || (lat != null ? `${lat.toFixed(6)}, ${lon.toFixed(6)}` : 'Lokasi tidak tersedia'));
+  if (lat != null) baris.push(`Koordinat: ${lat.toFixed(6)}, ${lon.toFixed(6)}`);
+  baris.push(formatWaktuWatermark(waktu || new Date()));
+
+  const fontUtama = Math.max(13, Math.round(w * 0.028));
+  const fontKedua = Math.max(11, Math.round(w * 0.022));
+  const lineH = Math.round(fontUtama * 1.5);
+  const padX = Math.round(w * 0.03);
+  const boxH = padX * 1.4 + lineH * baris.length;
+
+  ctx.fillStyle = 'rgba(4,12,18,0.62)';
+  ctx.fillRect(0, h - boxH, w, boxH);
+
+  ctx.fillStyle = '#ffffff';
+  ctx.textBaseline = 'top';
+  let ty = h - boxH + padX * 0.7;
+  baris.forEach((line, i) => {
+    ctx.font = (i === 0 ? `600 ${fontUtama}px sans-serif` : `${fontKedua}px sans-serif`);
+    ctx.fillText(line, padX, ty);
+    ty += lineH;
+  });
 }
 
 function applyRolePermissions(){

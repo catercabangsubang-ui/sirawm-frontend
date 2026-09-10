@@ -856,11 +856,21 @@ async function renderPembacaan(root){
           <td class="cell-mono">${r.pemakaian}</td>
           <td class="cell-mono">${r.rata_rata_pemakaian}</td>
           <td>${r.telat_baca_hari} Hari</td>
-          <td>${r.foto_drive_url ? `<div class="foto-cell"><a href="${esc(r.foto_drive_url)}" target="_blank" rel="noopener" class="btn btn-outline btn-sm">Lihat Foto</a><button class="icon-btn icon-btn-xs" data-foto-edit="${r.id}" title="Ganti foto dari Drive">${ICON.edit}</button><button class="icon-btn icon-btn-xs danger" data-foto-remove="${r.id}" title="Hapus link foto">${ICON.trash}</button></div>` : `<button class="link-btn" data-foto-add="${r.id}" title="Klik untuk pilih foto dari Drive">Belum ada</button>`}</td>
+          <td>${r.foto_meter
+            ? `<img src="${r.foto_meter}" class="foto-thumb" data-foto-view="${r.id}" title="Klik untuk lihat foto lengkap">`
+            : (r.foto_drive_url ? `<div class="foto-cell"><a href="${esc(r.foto_drive_url)}" target="_blank" rel="noopener" class="btn btn-outline btn-sm">Lihat Foto</a><button class="icon-btn icon-btn-xs" data-foto-edit="${r.id}" title="Ganti foto dari Drive">${ICON.edit}</button><button class="icon-btn icon-btn-xs danger" data-foto-remove="${r.id}" title="Hapus link foto">${ICON.trash}</button></div>` : `<button class="link-btn" data-detail="${r.id}" title="Klik untuk ambil foto meter">Belum ada</button>`)
+          }</td>
           <td>${pill(r.verifikasi_status)}</td>
           <td><div class="row-actions"><button class="icon-btn" data-detail="${r.id}">${ICON.edit}</button></div></td>
         </tr>
       `).join('') : `<tr><td colspan="12"><div class="empty-state">${ICON.empty}<p>Belum ada data pembacaan meter.</p></div></td></tr>`;
+
+      tbody.querySelectorAll('[data-foto-view]').forEach(img=>{
+        img.addEventListener('click', ()=>{
+          const row = data.find(x => String(x.id) === String(img.dataset.fotoView));
+          if (row) openFotoLightbox(row);
+        });
+      });
 
       tbody.querySelectorAll('[data-detail]').forEach(b=>{
         b.addEventListener('click', async ()=>{
@@ -932,6 +942,26 @@ async function renderPembacaan(root){
   document.getElementById('pbKode').addEventListener('change', loadPembacaan);
   loadPembacaan();
 
+  function openFotoLightbox(row){
+    const box = document.createElement('div');
+    box.className = 'lightbox-backdrop';
+    const waktuStr = row.waktu_foto ? new Date(row.waktu_foto).toLocaleString('id-ID', { dateStyle:'full', timeStyle:'short' }) : null;
+    box.innerHTML = `
+      <button class="lightbox-close" data-lb-close>${ICON.x}</button>
+      <div class="lightbox-box">
+        <img src="${row.foto_meter}" alt="Foto water meter ${esc(row.idpel)}">
+        <div class="lightbox-info">
+          <div style="font-weight:700; margin-bottom:4px;">${esc(row.nama)} \u2014 ${esc(row.idpel)}</div>
+          ${row.alamat_foto ? `<div class="foto-meta-line">${ICON.pin}<span>${esc(row.alamat_foto)}</span></div>` : ''}
+          ${(row.latitude && row.longitude) ? `<div class="foto-meta-line" style="padding-left:20px; color:var(--ink-500); font-size:11.5px;">Koordinat: ${row.latitude}, ${row.longitude}</div>` : ''}
+          ${waktuStr ? `<div class="foto-meta-line">${ICON.calendar}<span>${waktuStr}</span></div>` : ''}
+        </div>
+      </div>
+    `;
+    document.body.appendChild(box);
+    box.addEventListener('click', (e)=>{ if (e.target === box || e.target.closest('[data-lb-close]')) box.remove(); });
+  }
+
   function openPembacaanModal(existing) {
     const isEdit = !!existing;
     const m = mountModal(`
@@ -952,7 +982,27 @@ async function renderPembacaan(root){
           <div class="field"><label>Stan Lalu</label><input id="fPbStanLalu" type="number" value="${isEdit?existing.stan_lalu:0}"></div>
           <div class="field"><label>Stan Baca</label><input id="fPbStanBaca" type="number" value="${isEdit?existing.stan_baca:0}"></div>
           <div class="field"><label>Rata-rata Pemakaian</label><input id="fPbRata" type="number" value="${isEdit?existing.rata_rata_pemakaian:0}"></div>
-          <div class="field full"><label>Link Foto (Google Drive)</label><input id="fPbFoto" value="${isEdit?esc(existing.foto_drive_url||''):''}" placeholder="https://drive.google.com/..."></div>
+          <div class="field full">
+            <label>Foto Water Meter</label>
+            <div id="fotoDisplayArea">
+              ${isEdit && existing.foto_meter
+                ? `<img src="${existing.foto_meter}" class="foto-kamera-preview" id="fotoPreviewImg">${existing.alamat_foto ? `<div class="foto-meta-line">${ICON.pin}<span>${esc(existing.alamat_foto)}</span></div>` : ''}`
+                : (isEdit && existing.foto_drive_url
+                    ? `<a href="${esc(existing.foto_drive_url)}" target="_blank" rel="noopener" class="btn btn-outline btn-sm">Lihat Foto Lama (Drive)</a>`
+                    : `<p class="cell-sub">Belum ada foto.</p>`)
+              }
+            </div>
+            <div class="kamera-live-wrap" id="kameraLiveWrap" style="display:none;">
+              <video id="kmVideo" autoplay playsinline muted></video>
+            </div>
+            <canvas id="kmCanvas" style="display:none;"></canvas>
+            <p class="gps-status-text" id="kmGpsStatus" style="display:none;"></p>
+            <div style="display:flex; gap:10px; margin-top:10px; flex-wrap:wrap;">
+              <button type="button" class="btn btn-water btn-sm" id="btnBukaKamera">${ICON.camera}${isEdit && existing.foto_meter ? 'Ganti Foto (Kamera)' : 'Ambil Foto dengan Kamera'}</button>
+              <button type="button" class="btn btn-outline btn-sm" id="btnAmbilFoto" style="display:none;">${ICON.check}Jepret</button>
+              <button type="button" class="btn btn-outline btn-sm" id="btnBatalKamera" style="display:none;">${ICON.x}Batal</button>
+            </div>
+          </div>
           ${isEdit && existing.verifikasi_status==='Perlu Feedback' && existing.catatan_feedback ? `<div class="field full"><label>Catatan Feedback Sebelumnya</label><textarea disabled>${esc(existing.catatan_feedback)}</textarea></div>` : ''}
         </div>
       </div>
@@ -962,6 +1012,122 @@ async function renderPembacaan(root){
         <button class="btn btn-forest" id="fPbSave">${ICON.check}Simpan</button>
       </div>
     `);
+
+    /* ----------------------------------------------------------
+       FITUR: Foto Kamera + Titik Lokasi + Watermark Waktu
+       Alur: buka kamera -> ambil GPS di latar belakang -> jepret
+       -> gambar overlay watermark di atas canvas -> simpan sebagai
+       base64, siap dikirim bersama data pembacaan saat "Simpan".
+    ---------------------------------------------------------- */
+    let fotoMeterData = (isEdit && existing.foto_meter) || null;
+    let fotoLat = (isEdit && existing.latitude) || null;
+    let fotoLon = (isEdit && existing.longitude) || null;
+    let fotoAlamat = (isEdit && existing.alamat_foto) || null;
+    let fotoWaktu = (isEdit && existing.waktu_foto) || null;
+    let kmStream = null;
+    let gpsSementara = { lat:null, lon:null, alamat:null };
+
+    const fotoDisplayArea = m.querySelector('#fotoDisplayArea');
+    const kameraLiveWrap = m.querySelector('#kameraLiveWrap');
+    const kmVideo = m.querySelector('#kmVideo');
+    const kmCanvas = m.querySelector('#kmCanvas');
+    const kmGpsStatus = m.querySelector('#kmGpsStatus');
+    const btnBukaKamera = m.querySelector('#btnBukaKamera');
+    const btnAmbilFoto = m.querySelector('#btnAmbilFoto');
+    const btnBatalKamera = m.querySelector('#btnBatalKamera');
+
+    function stopKamera(){
+      if (kmStream) { kmStream.getTracks().forEach(t => t.stop()); kmStream = null; }
+    }
+
+    function mulaiLacakGps(){
+      gpsSementara = { lat:null, lon:null, alamat:null };
+      kmGpsStatus.style.display = 'flex';
+      kmGpsStatus.className = 'gps-status-text';
+      kmGpsStatus.innerHTML = `${ICON.pin}<span>Mengambil titik lokasi GPS...</span>`;
+      if (!navigator.geolocation) {
+        kmGpsStatus.className = 'gps-status-text is-error';
+        kmGpsStatus.innerHTML = `${ICON.warn}<span>Perangkat tidak mendukung GPS.</span>`;
+        return;
+      }
+      navigator.geolocation.getCurrentPosition(async (pos)=>{
+        gpsSementara.lat = pos.coords.latitude;
+        gpsSementara.lon = pos.coords.longitude;
+        kmGpsStatus.innerHTML = `${ICON.pin}<span>Lokasi didapat (\u00b1${Math.round(pos.coords.accuracy)}m), mencari nama alamat...</span>`;
+        const alamat = await reverseGeocode(gpsSementara.lat, gpsSementara.lon);
+        gpsSementara.alamat = alamat;
+        kmGpsStatus.className = 'gps-status-text is-ok';
+        kmGpsStatus.innerHTML = `${ICON.pin}<span>${esc(alamat || `${gpsSementara.lat.toFixed(6)}, ${gpsSementara.lon.toFixed(6)}`)}</span>`;
+      }, ()=>{
+        kmGpsStatus.className = 'gps-status-text is-error';
+        kmGpsStatus.innerHTML = `${ICON.warn}<span>Gagal ambil lokasi GPS. Izinkan akses lokasi di browser, lalu coba lagi.</span>`;
+      }, { enableHighAccuracy:true, timeout:15000 });
+    }
+
+    async function bukaKamera(){
+      fotoDisplayArea.style.display = 'none';
+      kameraLiveWrap.style.display = 'block';
+      btnBukaKamera.style.display = 'none';
+      btnAmbilFoto.style.display = '';
+      btnBatalKamera.style.display = '';
+      mulaiLacakGps();
+      try {
+        kmStream = await navigator.mediaDevices.getUserMedia({ video:{ facingMode:'environment' }, audio:false });
+        kmVideo.srcObject = kmStream;
+      } catch(e) {
+        toast('Tidak bisa mengakses kamera. Periksa izin kamera di browser.');
+        batalKamera();
+      }
+    }
+
+    function batalKamera(){
+      stopKamera();
+      kameraLiveWrap.style.display = 'none';
+      kmGpsStatus.style.display = 'none';
+      fotoDisplayArea.style.display = '';
+      btnBukaKamera.style.display = '';
+      btnAmbilFoto.style.display = 'none';
+      btnBatalKamera.style.display = 'none';
+    }
+
+    btnBukaKamera.addEventListener('click', bukaKamera);
+    btnBatalKamera.addEventListener('click', batalKamera);
+
+    btnAmbilFoto.addEventListener('click', ()=>{
+      const MAX_W = 1280;
+      const scale = Math.min(1, MAX_W / kmVideo.videoWidth);
+      kmCanvas.width = kmVideo.videoWidth * scale;
+      kmCanvas.height = kmVideo.videoHeight * scale;
+      const ctx = kmCanvas.getContext('2d');
+      ctx.drawImage(kmVideo, 0, 0, kmCanvas.width, kmCanvas.height);
+
+      const waktuJepret = new Date();
+      drawWatermarkOnCanvas(ctx, kmCanvas.width, kmCanvas.height, {
+        lat: gpsSementara.lat, lon: gpsSementara.lon, alamat: gpsSementara.alamat, waktu: waktuJepret,
+      });
+
+      fotoMeterData = kmCanvas.toDataURL('image/jpeg', 0.82);
+      fotoLat = gpsSementara.lat;
+      fotoLon = gpsSementara.lon;
+      fotoAlamat = gpsSementara.alamat;
+      fotoWaktu = waktuJepret.toISOString();
+
+      stopKamera();
+      kameraLiveWrap.style.display = 'none';
+      kmGpsStatus.style.display = 'none';
+      fotoDisplayArea.style.display = '';
+      fotoDisplayArea.innerHTML = `<img src="${fotoMeterData}" class="foto-kamera-preview">` +
+        (fotoAlamat ? `<div class="foto-meta-line">${ICON.pin}<span>${esc(fotoAlamat)}</span></div>` : '');
+      btnBukaKamera.innerHTML = `${ICON.camera}Ambil Ulang Foto`;
+      btnBukaKamera.style.display = '';
+      btnAmbilFoto.style.display = 'none';
+      btnBatalKamera.style.display = 'none';
+      toast('Foto berhasil diambil, jangan lupa tekan Simpan');
+    });
+
+    // Kalau modal ditutup (Batal / klik luar) saat kamera masih menyala, matikan kamera
+    m.querySelectorAll('[data-close]').forEach(b => b.addEventListener('click', stopKamera));
+    m.addEventListener('click', e => { if (e.target === m) stopKamera(); });
 
     m.querySelector('#fPbSave').addEventListener('click', async ()=>{
       const data = {
@@ -974,7 +1140,11 @@ async function renderPembacaan(root){
         stan_lalu: parseInt(m.querySelector('#fPbStanLalu').value) || 0,
         stan_baca: parseInt(m.querySelector('#fPbStanBaca').value) || 0,
         rata_rata_pemakaian: parseInt(m.querySelector('#fPbRata').value) || 0,
-        foto_drive_url: m.querySelector('#fPbFoto').value.trim() || null,
+        foto_meter: fotoMeterData,
+        latitude: fotoLat,
+        longitude: fotoLon,
+        alamat_foto: fotoAlamat,
+        waktu_foto: fotoWaktu,
       };
       try {
         if (isEdit) {
